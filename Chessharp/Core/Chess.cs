@@ -163,15 +163,16 @@ namespace Chessharp.Core
 
         string turn;
 
-        int ep_square;
+        int epSquare;
 
-        int half_moves = 0;
+        int halfMoves = 0;
 
-        int move_number = 1;
+        int moveNumber = 1;
 
-        int history = 1;
+        int[] history = new int[] {};
 
-        int header = 1;
+        Dictionary<string, string> header = new Dictionary<string, string>();
+
         /*
         var castling = {w: 0, b: 0};
         var ep_square = EMPTY;
@@ -352,7 +353,7 @@ namespace Chessharp.Core
             this.fen = fen;
 
             this.turn = this.WHITE;
-            this.ep_square = this.EMPTY;
+            this.epSquare = this.EMPTY;
 
             this.InitPawnOffsets();
             this.InitPieceOffsets();
@@ -363,36 +364,68 @@ namespace Chessharp.Core
             this.InitRooks();
 
             if (this.fen == "") {
-                //this.Load (this.DEFAULT_POSITION);
+                this.Load (this.DEFAULT_POSITION, false);
             } else {
 
             }
         }
 
-        public Clear(bool keepHeaders)
+        /* called when the initial board setup is changed with put() or remove().
+           * modifies the SetUp and FEN properties of the header object.  if the FEN is
+           * equal to the default position, the SetUp and FEN are deleted
+           * the setup is only updated if history.length is zero, ie moves haven't been
+           * made.
+           */
+        public void UpdateSetup(string fen)
+        {
+            if (this.history.Length > 0) {
+                return;
+            }
+
+            if (fen != this.DEFAULT_POSITION)
+            {
+                this.header["SetUp"] = "1";
+                this.header["FEN"] = fen;
+            } else {
+                this.header.Remove("SetUp");
+                this.header.Remove("FEN");
+            }
+        }
+
+
+        public void Clear(bool keepHeaders)
         {
             if (keepHeaders == null) {
                 keepHeaders = false;
             }
 
             this.board = new Dictionary<string, int>[128];
-            Dictionary<string, int> kings = new Dictionary<string, int> {
+            this.kings = new Dictionary<string, int>() {
                 { "w", this.EMPTY },
                 { "b", this.EMPTY }
             };
             this.turn = WHITE;
-            castling = { w: 0, b: 0};
-            ep_square = EMPTY;
-            half_moves = 0;
-            move_number = 1;
-            history = [];
-            if (!keep_headers) header = { };
-            update_setup(generate_fen());
+            this.castling = new Dictionary<string, int>() {
+                { "w", this.EMPTY },
+                { "b", this.EMPTY }
+            };
+            this.epSquare   = this.EMPTY;
+            this.halfMoves  = 0;
+            this.moveNumber = 1;
+            this.history = new int[] {};
+            if (!keepHeaders)
+            {
+                header = new Dictionary<string, string>();
+            }
+            this.UpdateSetup(this.GenerateFen());
         }
 
-        function reset()
+        public void reset()
         {
-            load(DEFAULT_POSITION);
+            this.Load(
+                DEFAULT_POSITION,
+                false
+            );
         }
 
         public bool Load(string fen, bool keepHeaders)
@@ -401,64 +434,186 @@ namespace Chessharp.Core
                 keepHeaders = false;
             }
 
-            var tokens = fen.split(/\s +/);
-            var position = tokens[0];
-            var square = 0;
+            string[] tokens = Regex.Split(this.fen, @"s +");
+            string position = tokens[0];
+            int square = 0;
 
-            if (!validate_fen(fen).valid)
+            Dictionary<string, string> validateFenResult = this.ValidateFen(fen);
+
+            //if (validateFenResult["valid"] == "false") {
+                //return false;
+            //}
+
+            this.Clear(keepHeaders);
+
+            for (var i = 0; i < position.Length; i++)
             {
-                return false;
-            }
+                char piece = position[i];
 
-            clear(keep_headers);
-
-            for (var i = 0; i < position.length; i++)
-            {
-                var piece = position.charAt(i);
-
-                if (piece === '/')
-                {
+                if (piece.Equals('/')) {
                     square += 8;
-                }
-                else if (is_digit(piece))
-                {
-                    square += parseInt(piece, 10);
-                }
-                else
-                {
-                    var color = (piece < 'a') ? WHITE : BLACK;
-                    put({ type: piece.toLowerCase(), color: color}, algebraic(square));
+                } else if (int.TryParse(piece.ToString(), out int pieceOut)) {
+                    square += Int32.Parse(piece.ToString());
+                } else {
+                    string color = (piece < 'a') ? this.WHITE : this.BLACK;
+
+                    Dictionary<string, string> putParams = new Dictionary<string, string>() {
+                        { "type", piece.ToString().ToLower()},
+                        { "color", color }
+                    };
+                    this.Put(putParams, this.Algebraic(square));
                     square++;
                 }
             }
 
-            turn = tokens[1];
+            this.turn = tokens[1];
 
-            if (tokens[2].indexOf('K') > -1) {
-              castling.w |= BITS.KSIDE_CASTLE;
+            if (tokens[2].IndexOf('K') > -1)
+            {
+                this.castling["w"] |= this.BITS["KSIDE_CASTLE"];
             }
-            if (tokens[2].indexOf('Q') > -1) {
-              castling.w |= BITS.QSIDE_CASTLE;
+            if (tokens[2].IndexOf('Q') > -1)
+            {
+                this.castling["w"] |= this.BITS["QSIDE_CASTLE"];
             }
-            if (tokens[2].indexOf('k') > -1) {
-              castling.b |= BITS.KSIDE_CASTLE;
+            if (tokens[2].IndexOf('k') > -1)
+            {
+                this.castling["b"] |= this.BITS.["KSIDE_CASTLE"];
             }
-            if (tokens[2].indexOf('q') > -1) {
-              castling.b |= BITS.QSIDE_CASTLE;
+            if (tokens[2].IndexOf('q') > -1)
+            {
+                this.castling["b"] |= this.BITS["QSIDE_CASTLE"];
             }
 
-            ep_square = (tokens[3] === '-') ? EMPTY : SQUARES[tokens[3]];
-            half_moves = parseInt(tokens[4], 10);
-            move_number = parseInt(tokens[5], 10);
+            this.epSquare   = (tokens[3] == "-") ? this.EMPTY : this.SQUARES[tokens[3]];
+            this.halfMoves  = Int32.Parse(tokens[4]);
+            this.moveNumber = Int32.Parse(tokens[5]);
 
-            update_setup(generate_fen());
+            this.UpdateSetup(this.GenerateFen());
 
             return true;
         }
 
-        public Dictionary<string, string> ValidateFen(string fen)
+        public string Algebraic(int i)
         {
-            this.fen = fen;
+            int f = this.File(i);
+            int r = this.Rank(i);
+            return "abcdefgh".Substring(f, f + 1) + "87654321".Substring(r, r + 1);
+        }
+
+        public int Rank(int i)
+        {
+            return i >> 4;
+        }
+
+        public int File(int i)
+        {
+            return i & 15;
+        }
+
+        public string SwapColor(string c)
+        {
+            return c == this.WHITE ? this.BLACK : this.WHITE;
+        }
+
+        public bool IsDigit(string c)
+        {
+            return "0123456789".IndexOf(c) != -1;
+        }
+
+        public bool Put(Dictionary<string, string> piece, string square)
+        {
+            if (!('type' in piece && 'color' in piece)) {
+                return false;
+            }
+
+            if (SYMBOLS.indexOf(piece.type.toLowerCase()) === -1)
+            {
+                return false;
+            }
+
+            if (!(square in SQUARES)) {
+                return false;
+            }
+
+            var sq = this.SQUARES[square];
+
+            /* don't let the user place more than one king */
+            if (piece.type == KING &&
+                !(kings[piece.color] == EMPTY || kings[piece.color] == sq))
+            {
+                return false;
+            }
+
+            board[sq] = { type: piece.type, color: piece.color};
+            if (piece.type === KING)
+            {
+                kings[piece.color] = sq;
+            }
+
+            this.UpdateSetup(this.GenerateFen());
+
+            return true;
+        }
+
+        public void GenerateFen()
+        {
+            var empty = 0;
+            var fen = '';
+
+            for (var i = SQUARES.a8; i <= SQUARES.h1; i++)
+            {
+                if (board[i] == null)
+                {
+                    empty++;
+                }
+                else
+                {
+                    if (empty > 0)
+                    {
+                        fen += empty;
+                        empty = 0;
+                    }
+                    var color = board[i].color;
+                    var piece = board[i].type;
+
+                    fen += (color === WHITE) ?
+                             piece.toUpperCase() : piece.toLowerCase();
+                }
+
+                if ((i + 1) & 0x88)
+                {
+                    if (empty > 0)
+                    {
+                        fen += empty;
+                    }
+
+                    if (i !== SQUARES.h1)
+                    {
+                        fen += '/';
+                    }
+
+                    empty = 0;
+                    i += 8;
+                }
+            }
+
+            char cflags = ' ';
+            if (castling[WHITE] & BITS.KSIDE_CASTLE) { cflags += 'K'; }
+            if (castling[WHITE] & BITS.QSIDE_CASTLE) { cflags += 'Q'; }
+            if (castling[BLACK] & BITS.KSIDE_CASTLE) { cflags += 'k'; }
+            if (castling[BLACK] & BITS.QSIDE_CASTLE) { cflags += 'q'; }
+
+            /* do we have an empty castling flag? */
+            cflags = cflags || '-';
+            var epflags = (ep_square === EMPTY) ? '-' : algebraic(ep_square);
+
+            return [fen, turn, cflags, epflags, half_moves, move_number].join(' ');
+        }
+
+        public Dictionary<string, string> ValidateFen(string fenVar)
+        {
+            this.fen = fenVar;
 
             Dictionary<int, string> errors = new Dictionary<int, string>
             {
