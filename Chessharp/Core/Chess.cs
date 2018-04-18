@@ -24,13 +24,14 @@ namespace Chessharp.Core
         string DEFAULT_POSITION = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
         string[] POSSIBLE_RESULTS = new string[] { "1-0", "0-1", "1/2-1/2", "*" };
 
+
         /*
          *  var PAWN_OFFSETS = {
          *   b: [16, 32, 17, 15],
          *   w: [-16, -32, -17, -15]
          *  };
          */
-        System.Collections.Generic.Dictionary<string, int[]> PAWN_OFFSETS = new Dictionary<string, int[]>();
+        Dictionary<string, int[]> PAWN_OFFSETS = new Dictionary<string, int[]>();
 
         /*
          * var PIECE_OFFSETS = {
@@ -146,7 +147,7 @@ namespace Chessharp.Core
             ]
         };
         */
-        Dictionary<string, int>[] ROOKS = new Dictionary<string, int>[1];
+        Dictionary<string, Dictionary<string, int>[]> ROOKS = new Dictionary<string, Dictionary<string, int>[]>();
 
         /**
          * var board = new Array(128);
@@ -875,28 +876,543 @@ namespace Chessharp.Core
             return piece;
         }
 
-        public Dictionary<string, string> BuildMove(Dictionary<string, string> board, string from, string to, string flags, string promotion)
+        public Dictionary<string, string> BuildMove(Dictionary<string, string>[] localBoard, string from, string to, int flags, string promotion)
         {
-            this.board[0]["type"];
+            Dictionary<string, string> boardFrom = localBoard[Convert.ToInt32(from)];
             Dictionary<string, string> move = new Dictionary<string, string>() {
                 { "color", this.turn },
                 { "from", from },
                 { "to", "to" },
-                { "flags", flags },
-                { "piece",  }
+                { "flags", flags.ToString() },
+                { "piece",  boardFrom["type"] }
             };
 
             if (promotion != null) {
                 move["flags"] = move["flags"] != null ? move["flags"] : "";
                 move["promotion"] = promotion;
             }
-
-            if (board[to] != null) {
-                move["captured"] = board[to]["type"];
+            Dictionary<string, string> boardTo = localBoard[Convert.ToInt32(to)];
+            if (boardTo != null) {
+                move["captured"] = boardTo["type"];
             } else if ((flags & this.BITS["EP_CAPTURE"]) != 0) {
-                move.captured = PAWN;
+                move["captured"] = this.PAWN;
             }
             return move;
-          }
+        }
+
+        public void Push(Dictionary<string, string> move)
+        {
+            /*history.push({
+                move: move,
+                kings: { b: kings.b, w: kings.w},
+                turn: turn,
+                castling: { b: castling.b, w: castling.w},
+                ep_square: ep_square,
+                half_moves: half_moves,
+                move_number: move_number
+            });*/
+        }
+
+
+        public void MakeMove(Dictionary<string, string> move)
+        {
+            string us = this.turn;
+            string them = this.SwapColor(us);
+            this.Push(move);
+
+            int moveTo = Convert.ToInt32(move["to"]);
+            int moveFrom = Convert.ToInt32(move["from"]);
+
+            board[moveTo] = board[moveFrom];
+            board[moveFrom] = null;
+
+            /* if ep capture, remove the captured pawn */
+            if ((Convert.ToInt32(move["flags"]) & this.BITS["EP_CAPTURE"]) != 0) {
+                if (this.turn == this.BLACK)
+                {
+                    board[moveTo - 16] = null;
+                }
+                else
+                {
+                    board[moveTo + 16] = null;
+                }
+            }
+
+            /* if pawn promotion, replace with new piece */
+            if ((Convert.ToInt32(move["flags"]) & this.BITS["PROMOTION"]) != 0) {
+                board[moveTo] = new Dictionary<string, string>() {
+                    { "type", move["promotion"]},
+                    {"color", us}
+                };
+            }
+
+            /* if we moved the king */
+            Dictionary<string, string> boardMoveTo = board[moveTo];
+            if (boardMoveTo["type"] == this.KING)
+            {
+                this.kings[boardMoveTo["color"]] = moveTo;
+
+                /* if we castled, move the rook next to the king */
+                if ((Convert.ToInt32(move["flags"]) & this.BITS["KSIDE_CASTLE"]) != 0)
+                {
+                    var castling_to = moveTo - 1;
+                    var castling_from = moveTo + 1;
+                    board[castling_to] = board[castling_from];
+                    board[castling_from] = null;
+                }
+                else if ((Convert.ToInt32(move["flags"]) & this.BITS["QSIDE_CASTLE"]) != 0)
+                {
+                    var castlingTo = moveTo + 1;
+                    var castlingFrom = moveTo - 2;
+                    board[castlingTo] = board[castlingFrom];
+                    board[castlingFrom] = null;
+                }
+
+                /* turn off castling */
+                //-100 == ""
+                this.castling[us] = -100;
+            }
+
+            /* turn off castling if we move a rook */
+            if (this.castling[us] > 0)
+            {
+
+                for (int i = 0, len = this.ROOKS[us].Length; i < len; i++)
+                {
+                    Dictionary<string, int> rookUsItem = this.ROOKS[us][i];
+                    if (move["from"] == rookUsItem["square"].ToString() && (this.castling[us] & rookUsItem["flag"]) != 0) {
+                        this.castling[us] ^= rookUsItem["flag"];
+                        break;
+                    }
+                }
+            }
+
+            /* turn off castling if we capture a rook */
+            if (this.castling[them] > 0)
+            {
+                for (int i = 0, len = this.ROOKS[them].Length; i < len; i++)
+                {
+                    Dictionary<string, int> rookThemItem = this.ROOKS[them][i];
+                    if (moveTo == rookThemItem["square"] && (this.castling[them] & rookThemItem["flag"]) != 0)
+                    {
+                        this.castling[them] ^= rookThemItem["flag"];
+                        break;
+                    }
+                }
+            }
+
+            /* if big pawn move, update the en passant square */
+            int moveFlags = Convert.ToInt32(move["flags"]);
+            if ((moveFlags & this.BITS["BIG_PAWN"]) != 0)
+            {
+                if (this.turn == "b")
+                {
+                    this.epSquare = moveTo - 16;
+                }
+                else
+                {
+                    this.epSquare = moveTo + 16;
+                }
+            } else {
+                this.epSquare = this.EMPTY;
+            }
+
+            /* reset the 50 move counter if a pawn is moved or a piece is captured */
+            if (move["piece"] == this.PAWN)
+            {
+                this.halfMoves = "0";
+            }
+            else if ((moveFlags & (this.BITS["CAPTURE"] | this.BITS["EP_CAPTURE"])) != 0)
+            {
+                this.halfMoves = "0";
+            }
+            else
+            {
+                int halfMovesInt = Convert.ToInt32(this.halfMoves);
+                halfMovesInt++;
+                this.halfMoves = halfMovesInt.ToString();
+            }
+
+            if (this.turn == this.BLACK)
+            {
+                int moveNumberInt = Convert.ToInt32(this.moveNumber);
+                moveNumberInt++;
+                this.moveNumber = moveNumberInt.ToString();
+            }
+            this.turn = this.SwapColor(this.turn);
+        }
+
+        public Dictionary<string, string>[] AddMove(Dictionary<string, string>[] localBoard, Dictionary<string, string>[] moves, string from, string to, int flags)
+        {
+            /* if pawn promotion */
+            Dictionary<string, string> boardFrom = localBoard[Convert.ToInt32(from)];
+            int toInt = Convert.ToInt32(to);
+            if (boardFrom["type"] == this.PAWN && (this.Rank(toInt) == this.RANK_8 || this.Rank(toInt) == this.RANK_1))
+            {
+                string[] pieces = new string[] { this.QUEEN, this.ROOK, this.BISHOP, this.KNIGHT };
+                for (int i = 0, len = pieces.Length; i < len; i++)
+                {
+                    //risk by length
+                    moves[moves.Length] = this.BuildMove(localBoard, from, to, flags, pieces[i]);
+                }
+            } else {
+                //risk by lenght
+                moves[moves.Length] = this.BuildMove(localBoard, from, to, flags, null);
+            }
+
+            return moves;
+        }
+
+        public Dictionary<string, string>[] GenerateMoves(Dictionary<string, int> options)
+        {
+            Dictionary<string, string>[] moves = new Dictionary<string, string>[] { };
+            string us = this.turn;
+            string them = this.SwapColor(us);
+            Dictionary<string, int> secondRank = new Dictionary<string, int>() { { "b", this.RANK_7 }, { "w", this.RANK_2 } };
+
+            int firstSq = this.SQUARES["a8"];
+            int lastSq = this.SQUARES["h1"];
+            bool singleSquare = false;
+
+            /* do we want legal moves? */
+            int legal = (options != null && options.ContainsKey("legal")) ? options["legal"] : 1;
+
+            /* are we generating moves for a single square? */
+            if (options != null && options.ContainsKey("square"))
+            {
+                if (this.SQUARES.ContainsKey(options["square"].ToString()))
+                {
+                    firstSq = lastSq = this.SQUARES[options["square"].ToString()];
+                    singleSquare = true;
+                }
+                else
+                {
+                    /* invalid square */
+                    return null;
+                }
+            }
+
+            for (int i = firstSq; i <= lastSq; i++)
+            {
+                /* did we run off the end of the board */
+                if ((i & 0x88) != 0)
+                {
+                    i += 7; continue;
+                }
+
+                Dictionary<string, string> piece = this.board[i];
+                if (piece == null || piece["color"] != us)
+                {
+                    continue;
+                }
+
+                if (piece["type"] == this.PAWN)
+                {
+                    /* single square, non-capturing */
+                    int square = i + this.PAWN_OFFSETS[us][0];
+                    if (board[square] == null)
+                    {
+                        moves = this.AddMove(this.board, moves, i.ToString(), square.ToString(), this.BITS["NORMAL"]);
+
+                        /* double square */
+                        square = i + this.PAWN_OFFSETS[us][1];
+                        if (secondRank[us] == this.Rank(i) && this.board[square] == null)
+                        {
+                            moves = this.AddMove(this.board, moves, i.ToString(), square.ToString(), this.BITS["BIG_PAWN"]);
+                        }
+                    }
+
+                    /* pawn captures */
+                    for (int j = 2; j < 4; j++)
+                    {
+                        square = i + this.PAWN_OFFSETS[us][j];
+                        if ((square & 0x88) != 0)
+                        {
+                            continue;
+                        }
+                        Dictionary<string, string> boardSquare = this.board[square];
+                        if (boardSquare != null && boardSquare["color"] == them)
+                        {
+                            moves = this.AddMove(board, moves, i.ToString(), square.ToString(), this.BITS["CAPTURE"]);
+                        }
+                        else if (square == this.epSquare)
+                        {
+                            this.AddMove(board, moves, i.ToString(), this.epSquare.ToString(), this.BITS["EP_CAPTURE"]);
+                        }
+                    }
+                }
+                else
+                {
+                    for (int j = 0, len2 = this.PIECE_OFFSETS[piece["type"]].Length; j < len2; j++)
+                    {
+                        int offset = this.PIECE_OFFSETS[piece["type"]][j];
+                        int square = i;
+
+                        while (true)
+                        {
+                            square += offset;
+                            if ((square & 0x88) != 0)
+                            {
+                                break;
+                            }
+                            Dictionary<string, string> boardSquare = this.board[square];
+                            if (boardSquare == null)
+                            {
+                                this.AddMove(this.board, moves, i.ToString(), square.ToString(), this.BITS["NORMAL"]);
+                            }
+                            else
+                            {
+                                if (boardSquare["color"] == us)
+                                {
+                                    break;
+                                }
+                                moves = this.AddMove(this.board, moves, i.ToString(), square.ToString(), this.BITS["CAPTURE"]);
+                                break;
+                            }
+
+                            /* break, if knight or king */
+                            if (piece["type"] == "n" || piece["type"] == "k")
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            /* check for castling if: a) we're generating all moves, or b) we're doing
+            * single square move generation on the king's square
+            */
+            if ((!singleSquare) || lastSq == this.kings[us])
+            {
+                /* king-side castling */
+                if ((this.castling[us] & this.BITS["KSIDE_CASTLE"]) != 0)
+                {
+                    int castlingFrom = this.kings[us];
+                    int castlingTo = castlingFrom + 2;
+
+                    if (board[castlingFrom + 1] == null && this.board[castlingTo] == null &&
+                    !this.Attacked(them, kings[us]) &&
+                    !this.Attacked(them, castlingFrom + 1) &&
+                    !this.Attacked(them, castlingTo))
+                    {
+                        moves = this.AddMove(board, moves, this.kings[us].ToString(), castlingTo.ToString(), this.BITS["KSIDE_CASTLE"]);
+                    }
+                }
+
+                /* queen-side castling */
+                if ((this.castling[us] & this.BITS["QSIDE_CASTLE"]) != 0)
+                {
+                    int castlingFrom = this.kings[us];
+                    int castlingTo = castlingFrom - 2;
+
+                    if (this.board[castlingFrom - 1] == null &&
+                    this.board[castlingFrom - 2] == null &&
+                    this.board[castlingFrom - 3] == null &&
+                    !this.Attacked(them, this.kings[us]) &&
+                    !this.Attacked(them, castlingFrom - 1) &&
+                    !this.Attacked(them, castlingTo))
+                    {
+                        moves = this.AddMove(board, moves, kings[us].ToString(), castlingTo.ToString(), this.BITS["QSIDE_CASTLE"]);
+                    }
+                }
+            }
+
+
+            /* return all pseudo-legal moves (this includes moves that allow the king
+             * to be captured)
+             */
+            if (legal != null)
+            {
+                return moves;
+            }
+
+            /* filter out illegal moves */
+            Dictionary<string, string>[] legalMoves = new Dictionary<string, string>[] {};
+            for (int i = 0, len3 = moves.Length; i < len3; i++)
+            {
+                this.MakeMove(moves[i]);
+                if (!this.KingAttacked(us))
+                {
+                    legalMoves[legalMoves.Length] = moves[i];
+                }
+                this.UndoMove();
+            }
+
+            return legalMoves;
+        }
+
+        public bool KingAttacked(string color)
+        {
+            return this.Attacked(this.SwapColor(color), this.kings[color]);
+        }
+
+        public void UndoMove()
+        {
+            var old = history.pop();
+            if (old == null) { return null; }
+
+            var move = old.move;
+            kings = old.kings;
+            turn = old.turn;
+            castling = old.castling;
+            ep_square = old.ep_square;
+            half_moves = old.half_moves;
+            move_number = old.move_number;
+
+            var us = turn;
+            var them = swap_color(turn);
+
+            board[move.from] = board[move.to];
+            board[move.from].type = move.piece;  // to undo any promotions
+            board[move.to] = null;
+
+            if (move.flags & BITS.CAPTURE)
+            {
+                board[move.to] = { type: move.captured, color: them};
+            }
+            else if (move.flags & BITS.EP_CAPTURE)
+            {
+                var index;
+                if (us === BLACK)
+                {
+                    index = move.to - 16;
+                }
+                else
+                {
+                    index = move.to + 16;
+                }
+                board[index] = { type: PAWN, color: them};
+            }
+
+
+            if (move.flags & (BITS.KSIDE_CASTLE | BITS.QSIDE_CASTLE))
+            {
+                var castling_to, castling_from;
+                if (move.flags & BITS.KSIDE_CASTLE)
+                {
+                    castling_to = move.to + 1;
+                    castling_from = move.to - 1;
+                }
+                else if (move.flags & BITS.QSIDE_CASTLE)
+                {
+                    castling_to = move.to - 2;
+                    castling_from = move.to + 1;
+                }
+
+                board[castling_to] = board[castling_from];
+                board[castling_from] = null;
+            }
+
+            return move;
+        }
+
+        public bool Attacked(string color, int square)
+        {
+            for (int i = this.SQUARES["a8"]; i <= this.SQUARES["h1"]; i++)
+            {
+                /* did we run off the end of the board */
+                if ((i & 0x88) != 0) { 
+                    i += 7;
+                    continue; 
+                }
+
+                /* if empty square or wrong color */
+
+                Dictionary<string, string> piece = board[i];
+                if (board[i] == null || piece["color"] != color) continue;
+
+                int difference = i - square;
+                int index = difference + 119;
+
+                    if ((this.ATTACKS[index] & (1 << this.SHIFTS[piece["type"]])) != 0)
+                {
+                        if (piece["type"] == this.PAWN)
+                    {
+                        if (difference > 0)
+                        {
+                            if (piece["color"] == this.WHITE) return true;
+                        }
+                        else
+                        {
+                            if (piece["color"] == this.BLACK) return true;
+                        }
+                        continue;
+                    }
+
+                    /* if the piece is a knight or a king */
+                        if (piece["type"] == "n" || piece["type"] == "k") return true;
+
+                    var offset = RAYS[index];
+                    var j = i + offset;
+
+                    var blocked = false;
+                    while (j != square)
+                    {
+                        if (board[j] != null) { 
+                                blocked = true; break;
+                            }
+                        j += offset;
+                    }
+
+                    if (!blocked) return true;
+                }
+            }
+
+            return false;
+        }
+
+        // parses all of the decorators out of a SAN string
+        public string StrippedSan(string move)
+        {
+            return move.replace(/=/, '').replace(/[+#]?[?!]*$/,'');
+        }
+
+        // convert a move from Standard Algebraic Notation (SAN) to 0x88 coordinates
+        public void MoveFromSan(string move, sloppy)
+        {
+            // strip off any move decorations: e.g Nf3+?!
+            string cleanMove = this.StrippedSan(move);
+
+            // if we're using the sloppy parser run a regex to grab piece, to, and from
+            // this should parse invalid SAN like: Pe2-e4, Rc1c4, Qf3xf7
+            if (sloppy)
+            {
+                var matches = cleanMove.match(/ ([pnbrqkPNBRQK]) ? ([a - h][1 - 8])x ? -? ([a - h][1 - 8])([qrbnQRBN]) ?/);
+                if (matches)
+                {
+                    var piece = matches[1];
+                    var from = matches[2];
+                    var to = matches[3];
+                    var promotion = matches[4];
+                }
+            }
+            this.G
+            var moves = generate_moves();
+            for (var i = 0, len = moves.length; i < len; i++)
+            {
+                // try the strict parser first, then the sloppy parser if requested
+                // by the user
+                if ((clean_move === stripped_san(move_to_san(moves[i]))) ||
+                    (sloppy && clean_move === stripped_san(move_to_san(moves[i], true))))
+                {
+                    return moves[i];
+                }
+                else
+                {
+                    if (matches &&
+                        (!piece || piece.toLowerCase() == moves[i].piece) &&
+                        SQUARES[from] == moves[i].from &&
+                        SQUARES[to] == moves[i].to &&
+                        (!promotion || promotion.toLowerCase() == moves[i].promotion))
+                    {
+                        return moves[i];
+                    }
+                }
+            }
+
+            return null;
+        }
+
     }
 }
