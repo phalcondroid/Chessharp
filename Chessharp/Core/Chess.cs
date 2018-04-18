@@ -170,7 +170,7 @@ namespace Chessharp.Core
 
         string moveNumber = "1";
 
-        int[] history = new int[] { };
+        Dictionary<string, object> history = new Dictionary<string, object>();
 
         Dictionary<string, string> header = new Dictionary<string, string>();
 
@@ -382,7 +382,7 @@ namespace Chessharp.Core
            */
         public void UpdateSetup(string fen)
         {
-            if (this.history.Length > 0)
+            if (this.history.Count > 0)
             {
                 return;
             }
@@ -424,7 +424,8 @@ namespace Chessharp.Core
             this.epSquare   = this.EMPTY;
             this.halfMoves  = "0";
             this.moveNumber = "1";
-            this.history = new int[] {};
+            this.history = new Dictionary<string, object>();
+
             if (!keepHeaders)
             {
                 header = new Dictionary<string, string>();
@@ -911,6 +912,24 @@ namespace Chessharp.Core
                 half_moves: half_moves,
                 move_number: move_number
             });*/
+            Dictionary<string, int> kingsLocal = new Dictionary<string, int>() {
+                {"b", this.kings["b"] },
+                {"w", this.kings["w"] }
+            };
+            Dictionary<string, int> castlingLocal = new Dictionary<string, int>() {
+                {"b", this.castling["b"] },
+                {"w", this.castling["w"] }
+            };
+            this.history = new Dictionary<string, object>()
+            {
+                { "move",        move },
+                { "kings",       kingsLocal },
+                { "turn",        this.turn },
+                { "castling",    castlingLocal },
+                { "ep_square",   this.epSquare },
+                { "half_moves",  this.halfMoves },
+                { "move_number", this.moveNumber }
+            };
         }
 
 
@@ -1063,7 +1082,7 @@ namespace Chessharp.Core
             return moves;
         }
 
-        public Dictionary<string, string>[] GenerateMoves(Dictionary<string, int> options)
+        public Dictionary<string, string>[] GenerateMoves(Dictionary<string, bool> options)
         {
             Dictionary<string, string>[] moves = new Dictionary<string, string>[] { };
             string us = this.turn;
@@ -1075,7 +1094,7 @@ namespace Chessharp.Core
             bool singleSquare = false;
 
             /* do we want legal moves? */
-            int legal = (options != null && options.ContainsKey("legal")) ? options["legal"] : 1;
+            bool legal = (options != null && options.ContainsKey("legal")) ? options["legal"] : true;
 
             /* are we generating moves for a single square? */
             if (options != null && options.ContainsKey("square"))
@@ -1242,22 +1261,217 @@ namespace Chessharp.Core
             return legalMoves;
         }
 
+        // parses all of the decorators out of a SAN string
+        public string StrippedSan(string move)
+        {
+            //return move.replace(/=/, '').replace(/[+#]?[?!]*$/,'');
+            Regex regex = new Regex(@"=");
+            string moveResult = regex.Replace(move, "");
+
+            regex = new Regex(@"[+#]?[?!]*$");
+            moveResult = regex.Replace(moveResult, "");
+            return moveResult;
+        }
+
+        // convert a move from Standard Algebraic Notation (SAN) to 0x88 coordinates
+        public Dictionary<string, string> MoveFromSan(string move, bool sloppy)
+        {
+            // strip off any move decorations: e.g Nf3+?!
+            string cleanMove = this.StrippedSan(move);
+
+            // if we're using the sloppy parser run a regex to grab piece, to, and from
+            // this should parse invalid SAN like: Pe2-e4, Rc1c4, Qf3xf7
+            if (sloppy)
+            {
+                //var matches = cleanMove.match(/ ([pnbrqkPNBRQK]) ? ([a - h][1 - 8])x ? -? ([a - h][1 - 8])([qrbnQRBN]) ?/);
+                Regex matchCondition = new Regex(@" ([pnbrqkPNBRQK]) ? ([a - h][1 - 8])x ? -? ([a - h][1 - 8])([qrbnQRBN]) ?");
+                MatchCollection matches = Regex.Matches(cleanMove, @" ([pnbrqkPNBRQK]) ? ([a - h][1 - 8])x ? -? ([a - h][1 - 8])([qrbnQRBN]) ?");
+                if (matchCondition.IsMatch(cleanMove))
+                {
+                    string piece     = matches[1].Value;
+                    string from      = matches[2].Value;
+                    string to        = matches[3].Value;
+                    string promotion = matches[4].Value;
+                }
+            }
+
+            Dictionary<string, string>[] moves = this.GenerateMoves(null);
+            for (int i = 0, len = moves.Length; i < len; i++)
+            {
+                // try the strict parser first, then the sloppy parser if requested
+                // by the user
+                if ((cleanMove == this.StrippedSan(this.MoveToSan(moves[i], false))) || (sloppy && cleanMove == this.StrippedSan(this.MoveToSan(moves[i], true))))
+                {
+                    return moves[i];
+                }
+                else
+                {
+                    if (matches &&
+                        (!piece || piece.toLowerCase() == moves[i].piece) &&
+                        SQUARES[from] == moves[i].from &&
+                        SQUARES[to] == moves[i].to &&
+                        (!promotion || promotion.toLowerCase() == moves[i].promotion))
+                    {
+                        return moves[i];
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public string MoveToSan(Dictionary<string, string> move, bool sloppy) {
+
+            string output = "";
+            int moveFlagsInt = Convert.ToInt32(move["flags"]);
+            int moveFromInt  = Convert.ToInt32(move["from"]);
+            int moveFromTo   = Convert.ToInt32(move["to"]);
+
+            if ((moveFlagsInt & this.BITS["KSIDE_CASTLE"]) != 0) {
+                 output = "O-O";
+            } else if ((moveFlagsInt & this.BITS["QSIDE_CASTLE"]) != 0) {
+                 output = "O-O-O";
+            } else {
+              string disambiguator = this.GetDisambiguator(move, sloppy);
+
+                if (move["piece"] != this.PAWN) {
+                    output += move["piece"].ToUpper() + disambiguator;
+                }
+
+                if ((moveFlagsInt & ((this.BITS["CAPTURE"] | this.BITS["EP_CAPTURE"]))) != 0) {
+                    if (move["piece"] == this.PAWN) {
+                        string algebraic = this.Algebraic(moveFromInt);
+                        output += algebraic[0];
+                    }
+                    output += "x";
+                }
+
+                output += this.Algebraic(moveFromTo);
+
+                if ((moveFlagsInt & this.BITS["PROMOTION"]) != 0) {
+                    output += "=" + move["promotion"].ToUpper();
+                }
+            }
+
+            this.MakeMove(move);
+            if (this.InCheck()) {
+                if (this.InCheckmate()) {
+                    output += "#";
+                } else {
+                    output += "+";
+                }
+            }
+            this.UndoMove();
+
+            return output;
+        }
+
         public bool KingAttacked(string color)
         {
             return this.Attacked(this.SwapColor(color), this.kings[color]);
         }
 
-        public void UndoMove()
+
+        public bool InCheck()
         {
-            var old = history.pop();
+            return this.KingAttacked(this.turn);
+        }
+
+        public bool InCheckmate()
+        {
+            Dictionary<string, string>[] generateMoves = this.GenerateMoves(null);
+            return this.InCheck() && generateMoves.Length == 0;
+        }
+
+        public bool InStalemate()
+        {
+            Dictionary<string, string>[] generateMoves = this.GenerateMoves(null);
+            return !this.InCheck() && generateMoves.Length == 0;
+        }
+
+        public string GetDisambiguator(Dictionary<string, string> move, bool sloppy)
+        {
+            Dictionary<string, bool> options = new Dictionary<string, bool>() { 
+                { "legal",  !sloppy }
+            };
+            Dictionary<string, string>[] moves = this.GenerateMoves(options);
+
+            string from = move["from"];
+            string to = move["to"];
+            string piece = move["piece"];
+
+            int ambiguities = 0;
+            int sameRank    = 0;
+            int sameFile    = 0;
+
+            for (int i = 0, len = moves.Length; i < len; i++)
+            {
+                Dictionary<string, string> movesI = moves[i];
+                string ambigFrom  = movesI["from"];
+                string ambigTo    = movesI["to"];
+                string ambigPiece = movesI["piece"];
+
+                /* if a move of the same piece type ends on the same to square, we'll
+                 * need to add a disambiguator to the algebraic notation
+                 */
+                if (piece == ambigPiece && from != ambigFrom && to == ambigTo)
+                {
+                    ambiguities++;
+                    int fromInt = Convert.ToInt32(from);
+                    int ambigFromInt = Convert.ToInt32(ambigFrom);
+
+                    if (this.Rank(fromInt) == this.Rank(ambigFromInt))
+                    {
+                        sameRank++;
+                    }
+
+                    if (this.File(fromInt) == this.File(ambigFromInt))
+                    {
+                        sameFile++;
+                    }
+                }
+            }
+
+            if (ambiguities > 0)
+            {
+                int fromInt = Convert.ToInt32(from);
+                /* if there exists a similar moving piece on the same rank and file as
+                 * the move in question, use the square as the disambiguator
+                 */
+                if (sameRank > 0 && sameFile > 0)
+                {
+                    return this.Algebraic(fromInt);
+                }
+                /* if the moving piece rests on the same file, use the rank symbol as the
+                 * disambiguator
+                 */
+                else if (sameFile > 0)
+                {
+                    string result = this.Algebraic(fromInt);
+                    return result[1].ToString();
+                }
+                /* else use the file symbol */
+                else
+                {
+                    string result = this.Algebraic(fromInt);
+                    return result[0].ToString();
+                }
+            }
+
+            return "";
+        }
+
+        public Dictionary<string, string> UndoMove()
+        {
+            Dictionary<strn> old = this.history;
             if (old == null) { return null; }
 
-            var move = old.move;
-            kings = old.kings;
-            turn = old.turn;
-            castling = old.castling;
-            ep_square = old.ep_square;
-            half_moves = old.half_moves;
+            var move =    old.move;
+            kings =       old.kings;
+            turn =        old.turn;
+            castling =    old.castling;
+            ep_square =   old.ep_square;
+            half_moves =  old.half_moves;
             move_number = old.move_number;
 
             var us = turn;
@@ -1361,58 +1575,5 @@ namespace Chessharp.Core
 
             return false;
         }
-
-        // parses all of the decorators out of a SAN string
-        public string StrippedSan(string move)
-        {
-            return move.replace(/=/, '').replace(/[+#]?[?!]*$/,'');
-        }
-
-        // convert a move from Standard Algebraic Notation (SAN) to 0x88 coordinates
-        public void MoveFromSan(string move, sloppy)
-        {
-            // strip off any move decorations: e.g Nf3+?!
-            string cleanMove = this.StrippedSan(move);
-
-            // if we're using the sloppy parser run a regex to grab piece, to, and from
-            // this should parse invalid SAN like: Pe2-e4, Rc1c4, Qf3xf7
-            if (sloppy)
-            {
-                var matches = cleanMove.match(/ ([pnbrqkPNBRQK]) ? ([a - h][1 - 8])x ? -? ([a - h][1 - 8])([qrbnQRBN]) ?/);
-                if (matches)
-                {
-                    var piece = matches[1];
-                    var from = matches[2];
-                    var to = matches[3];
-                    var promotion = matches[4];
-                }
-            }
-            this.G
-            var moves = generate_moves();
-            for (var i = 0, len = moves.length; i < len; i++)
-            {
-                // try the strict parser first, then the sloppy parser if requested
-                // by the user
-                if ((clean_move === stripped_san(move_to_san(moves[i]))) ||
-                    (sloppy && clean_move === stripped_san(move_to_san(moves[i], true))))
-                {
-                    return moves[i];
-                }
-                else
-                {
-                    if (matches &&
-                        (!piece || piece.toLowerCase() == moves[i].piece) &&
-                        SQUARES[from] == moves[i].from &&
-                        SQUARES[to] == moves[i].to &&
-                        (!promotion || promotion.toLowerCase() == moves[i].promotion))
-                    {
-                        return moves[i];
-                    }
-                }
-            }
-
-            return null;
-        }
-
     }
 }
