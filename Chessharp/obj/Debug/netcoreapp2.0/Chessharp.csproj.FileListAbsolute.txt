@@ -1,4 +1,10 @@
-/Users/julianmolina/Projects/Chessharp/Chessharp/obj/Debug/netcoreapp2.0/Chessharp.csprojResolveAssemblyReference.cache
+/Users/julianmolina/Projects/Chessharp/Chessharp/bin/Debug/netcoreapp2.0/Chessharp.deps.json
+/Users/julianmolina/Projects/Chessharp/Chessharp/bin/Debug/netcoreapp2.0/Chessharp.runtimeconfig.json
+/Users/julianmolina/Projects/Chessharp/Chessharp/bin/Debug/netcoreapp2.0/Chessharp.runtimeconfig.dev.json
+/Users/julianmolina/Projects/Chessharp/Chessharp/bin/Debug/netcoreapp2.0/Chessharp.dll
+/Users/julianmolina/Projects/Chessharp/Chessharp/bin/Debug/netcoreapp2.0/Chessharp.pdb
 /Users/julianmolina/Projects/Chessharp/Chessharp/obj/Debug/netcoreapp2.0/Chessharp.csproj.CoreCompileInputs.cache
 /Users/julianmolina/Projects/Chessharp/Chessharp/obj/Debug/netcoreapp2.0/Chessharp.AssemblyInfoInputs.cache
 /Users/julianmolina/Projects/Chessharp/Chessharp/obj/Debug/netcoreapp2.0/Chessharp.AssemblyInfo.cs
+/Users/julianmolina/Projects/Chessharp/Chessharp/obj/Debug/netcoreapp2.0/Chessharp.dll
+/Users/julianmolina/Projects/Chessharp/Chessharp/obj/Debug/netcoreapp2.0/Chessharp.pdb

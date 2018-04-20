@@ -7,5 +7,16 @@
 
   <ItemGroup>
     <Folder Include="Core\" />
+    <Folder Include="Core\Structures\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Core\Chessharp.cs" />
+    <Compile Remove="Core\zd" />
+    <Compile Remove="Core\Structures\RookStructItem.cs" />
+    <Compile Remove="Core\Structures\RookStructItem.cs" />
+    <Compile Remove="Core\Structures\RookStructItem.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Core\zd" Condition=" '$(EnableDefaultCompileItems)' == 'true' " />
   </ItemGroup>
 </Project>

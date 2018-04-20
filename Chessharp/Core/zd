@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace Chessharp.Core
+namespace Chessharp
 {
-    public class Chess
+    public class Core
     {
         string fen;
 
