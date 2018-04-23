@@ -105,7 +105,6 @@ namespace Chessharp.Core
             return prettyMove;
         }
 
-        /*
         public List<string> Moves()
         {
             List<Move> uglyMoves = GenerateMoves(null);
@@ -231,6 +230,5 @@ namespace Chessharp.Core
 
             return moveHistory;
         }
-        */
     }
 }
