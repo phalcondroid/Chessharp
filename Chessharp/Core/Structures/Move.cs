@@ -6,7 +6,7 @@ namespace Chessharp.Core.Structures
         private string color;
         private string from;
         private string to;
-        private int flags;
+        private string flags;
         private string piece;
         private string promotion;
         private string captured;
@@ -15,7 +15,7 @@ namespace Chessharp.Core.Structures
         public string Color { get => color; set => color = value; }
         public string From { get => from; set => from = value; }
         public string To { get => to; set => to = value; }
-        public int Flags { get => flags; set => flags = value; }
+        public string Flags { get => flags; set => flags = value; }
         public string Piece { get => piece; set => piece = value; }
         public string Promotion { get => promotion; set => promotion = value; }
         public string Captured { get => captured; set => captured = value; }
@@ -53,18 +53,7 @@ namespace Chessharp.Core.Structures
                     this.San = value;
                     break;
                 case "flags":
-                    this.Flags = Convert.ToInt32(value);
-                    break;
-            }
-        }
-
-        public void Set(string key, int value)
-        {
-            key = key.ToLower();
-            switch (key)
-            {
-                case "flags":
-                    Flags = value;
+                    this.Flags = value;
                     break;
             }
         }

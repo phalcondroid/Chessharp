@@ -85,7 +85,7 @@ namespace Chessharp.Core
         /**
          * { p: 0, n: 1, b: 2, r: 3, q: 4, k: 5 };
          */
-        Dictionary<string, int> SHIFTS = new Dictionary<string, int>();
+        public Dictionary<string, int> SHIFTS = new Dictionary<string, int>();
 
         /*
          * var FLAGS = {
@@ -111,7 +111,7 @@ namespace Chessharp.Core
                 QSIDE_CASTLE: 64
          * };
          */
-        Dictionary<string, int> BITS = new Dictionary<string, int>();
+        public Dictionary<string, int> BITS = new Dictionary<string, int>();
 
         int RANK_1 = 7;
         int RANK_2 = 6;
@@ -134,7 +134,7 @@ namespace Chessharp.Core
             a1: 112, b1: 113, c1: 114, d1: 115, e1: 116, f1: 117, g1: 118, h1: 119
         };
         */
-        Dictionary<string, int> SQUARES = new Dictionary<string, int>();
+        public Dictionary<string, int> SQUARES = new Dictionary<string, int>();
 
         /*
         var ROOKS = {
@@ -153,7 +153,7 @@ namespace Chessharp.Core
         /**
          * var board = new Array(128);
          */
-        Dictionary<string, string>[] BOARD = new Dictionary<string, string>[128];
+        public Dictionary<string, string>[] BOARD = new Dictionary<string, string>[128];
 
         /**
          * var kings = {w: EMPTY, b: EMPTY};
@@ -163,15 +163,15 @@ namespace Chessharp.Core
 
         Dictionary<string, int> CASTLING = new Dictionary<string, int>();
 
-        string TURN;
+        public string TURN;
 
         int EPSQUARE;
 
-        string HALFMOVES = "0";
+        public string HALFMOVES = "0";
 
-        string MOVENUMBER = "1";
+        public string MOVENUMBER = "1";
 
-        Dictionary<string, object> HISTORY = new Dictionary<string, object>();
+        public List<History> HISTORY = new List<History>();
 
         Dictionary<string, string> HEADER = new Dictionary<string, string>();
 
@@ -369,10 +369,10 @@ namespace Chessharp.Core
                 return;
             }
 
-            if (fen != this.DEFAULT_POSITION)
+            if (fen != DEFAULT_POSITION)
             {
                 HEADER["SetUp"] = "1";
-                this.HEADER["FEN"] = fen;
+                HEADER["FEN"] = fen;
             }
             else
             {
@@ -408,7 +408,7 @@ namespace Chessharp.Core
             EPSQUARE   = EMPTY;
             HALFMOVES  = "0";
             MOVENUMBER = "1";
-            HISTORY    = new Dictionary<string, object>();
+            HISTORY    = new List<History>();
 
             if (!keepHeaders)
             {
@@ -522,19 +522,14 @@ namespace Chessharp.Core
                 { "color", piece["color"]}
             };
 
-            //Console.WriteLine("puts {0} type {1} color {2} king {3}", puts, piece["type"], piece["color"], KING);
-
             if (piece["type"] == KING)
             {
-                Console.WriteLine("PieceCollor {0} sq {1}", piece["color"], sq);
                 KINGS[piece["color"]] = sq;
             }
 
             UpdateSetup(
                 GenerateFen()
             );
-
-            //Console.WriteLine("liliput");
 
             return true;
         }
@@ -845,9 +840,9 @@ namespace Chessharp.Core
         /*
          * 
          */
-        public void Reset()
+        public bool Reset()
         {
-            Load(DEFAULT_POSITION, false);
+            return Load(DEFAULT_POSITION, false);
         }
 
         /*
@@ -898,12 +893,14 @@ namespace Chessharp.Core
             move.Color = TURN;
             move.From = from;
             move.To = to;
-            move.Flags = flags;
+            move.Flags = flags.ToString();
             move.Piece = boardFrom["type"];
 
             if (promotion != null && promotion != "")
             {
-                move.Flags |= BITS["PROMOTION"];
+                int moveInt = Convert.ToInt32(move.Flags);
+                moveInt |= BITS["PROMOTION"];
+                move.Flags = moveInt.ToString();
                 move.Promotion = promotion;
             }
             Dictionary<string, string> boardTo = localBoard[Convert.ToInt32(to)];
@@ -937,18 +934,19 @@ namespace Chessharp.Core
                 {"b", CASTLING["b"] },
                 {"w", CASTLING["w"] }
             };
-            HISTORY = new Dictionary<string, object>()
-            {
-                { "move",        move },
-                { "kings",       kingsLocal },
-                { "turn",        TURN },
-                { "castling",    castlingLocal },
-                { "ep_square",   EPSQUARE },
-                { "half_moves",  HALFMOVES },
-                { "move_number", MOVENUMBER }
-            };
-        }
 
+            History history = new History
+            {
+                Move = move,
+                Kings = kingsLocal,
+                Turn = TURN,
+                Castling = castlingLocal,
+                EpSquare = EPSQUARE,
+                HalfMoves = HALFMOVES,
+                MoveNumber = MOVENUMBER
+            };
+            HISTORY.Add(history);
+        }
 
         public void MakeMove(Move move)
         {
@@ -956,7 +954,7 @@ namespace Chessharp.Core
             string them = SwapColor(us);
             Push(move);
 
-            int moveTo = Convert.ToInt32(move.To);
+            int moveTo   = Convert.ToInt32(move.To);
             int moveFrom = Convert.ToInt32(move.From);
 
             BOARD[moveTo] = BOARD[moveFrom];
@@ -1087,7 +1085,7 @@ namespace Chessharp.Core
             TURN = SwapColor(TURN);
         }
 
-        public Move[] AddMove(Dictionary<string, string>[] localBoard, Move[] moves, string from, string to, int flags)
+        public List<Move> AddMove(Dictionary<string, string>[] localBoard, List<Move> moves, string from, string to, int flags)
         {
             /* if pawn promotion */
 
@@ -1099,25 +1097,18 @@ namespace Chessharp.Core
                 for (int i = 0, len = pieces.Length; i < len; i++)
                 {
                     //risk by length
-                    moves[moves.Length] = BuildMove(localBoard, from, to, flags, pieces[i]);
+                    moves.Add(BuildMove(localBoard, from, to, flags, pieces[i]));
                 }
             }
             else
             {
-                int index = moves.Length - 1;
-                Console.WriteLine("moves lengt {0} add {1}", index, "no");
-
-                //risk by lenght
-                moves[index] = new Move();//BuildMove(localBoard, from, to, flags, null);
-
-
-                //moves[moves.Length] = BuildMove(localBoard, from, to, flags, null);
+                moves.Add(BuildMove(localBoard, from, to, flags, null));
             }
 
             return moves;
         }
 
-        public Move[] GenerateMoves(Dictionary<string, bool> options)
+        public List<Move> GenerateMoves(Dictionary<string, bool> options)
         {
             string us   = TURN;
             string them = SwapColor(us);
@@ -1142,11 +1133,11 @@ namespace Chessharp.Core
                 else
                 {
                     /* invalid square */
-                    return new Move[] {};
+                    return new List<Move>();
                 }
             }
 
-            Move[] moves = new Move[100];
+            List<Move> moves = new List<Move>();
 
             for (int i = firstSq; i <= lastSq; i++)
             {
@@ -1162,8 +1153,6 @@ namespace Chessharp.Core
                 {
                     continue;
                 }
-
-                Console.WriteLine("piece type : " + piece["type"] + " pawn : " + PAWN);
 
                 if (piece["type"] == PAWN)
                 {
@@ -1181,8 +1170,6 @@ namespace Chessharp.Core
                         }
                     }
 
-                    Console.WriteLine("first moves : " + moves.Length);
-
                     /* pawn captures */
                     for (int j = 2; j < 4; j++)
                     {
@@ -1198,7 +1185,7 @@ namespace Chessharp.Core
                         }
                         else if (square == EPSQUARE)
                         {
-                            AddMove(BOARD, moves, i.ToString(), EPSQUARE.ToString(), BITS["EP_CAPTURE"]);
+                            moves = AddMove(BOARD, moves, i.ToString(), EPSQUARE.ToString(), BITS["EP_CAPTURE"]);
                         }
                     }
                 }
@@ -1219,7 +1206,7 @@ namespace Chessharp.Core
                             Dictionary<string, string> boardSquare = BOARD[square];
                             if (boardSquare == null)
                             {
-                                AddMove(BOARD, moves, i.ToString(), square.ToString(), BITS["NORMAL"]);
+                                moves = AddMove(BOARD, moves, i.ToString(), square.ToString(), BITS["NORMAL"]);
                             }
                             else
                             {
@@ -1247,7 +1234,6 @@ namespace Chessharp.Core
             if ((!singleSquare) || lastSq == KINGS[us])
             {
                 /* king-side castling */
-                    
                 if ((CASTLING[us] & BITS["KSIDE_CASTLE"]) != 0)
                 {
                     int castlingFrom = KINGS[us];
@@ -1264,8 +1250,6 @@ namespace Chessharp.Core
                 {
                     int castlingFrom = KINGS[us];
                     int castlingTo = castlingFrom - 2;
-
-                    Console.WriteLine("castlingFrom {0} castlingTo {1}", castlingFrom, castlingTo);
 
                     if (BOARD[castlingFrom - 1] == null && BOARD[castlingFrom - 2] == null && BOARD[castlingFrom - 3] == null && !Attacked(them, KINGS[us]) && !Attacked(them, castlingFrom - 1) && !Attacked(them, castlingTo))
                     {
@@ -1284,13 +1268,13 @@ namespace Chessharp.Core
             }
 
             /* filter out illegal moves */
-            Move[] legalMoves = { };
-            for (int i = 0, len3 = moves.Length; i < len3; i++)
+            List<Move> legalMoves = new List<Move>();
+            for (int i = 0, len3 = moves.Count; i < len3; i++)
             {
                 MakeMove(moves[i]);
                 if (!KingAttacked(us))
                 {
-                    legalMoves[legalMoves.Length] = moves[i];
+                    legalMoves.Add(moves[i]);
                 }
                 UndoMove();
             }
@@ -1317,15 +1301,13 @@ namespace Chessharp.Core
             // strip off any move decorations: e.g Nf3+?!
             string cleanMove = StrippedSan(move);
 
-            Console.WriteLine("Clean move : " + cleanMove);
-
             string piece = "";
-            string from = "";
-            string to = "";
+            string from  = "";
+            string to    = "";
             string promotion = "";
 
-            Regex matchCondition = new Regex(@" ([pnbrqkPNBRQK]) ? ([a - h][1 - 8])x ? -? ([a - h][1 - 8])([qrbnQRBN]) ?");
-            matches = Regex.Matches(cleanMove, @" ([pnbrqkPNBRQK]) ? ([a - h][1 - 8])x ? -? ([a - h][1 - 8])([qrbnQRBN]) ?");
+            Regex matchCondition = new Regex(@"([pnbrqkPNBRQK])?([a-h][1-8])x?-?([a-h][1-8])([qrbnQRBN])?");
+            matches = Regex.Matches(cleanMove, @"([pnbrqkPNBRQK])?([a-h][1-8])x?-?([a-h][1-8])([qrbnQRBN])?");
 
             // if we're using the sloppy parser run a regex to grab piece, to, and from
             // this should parse invalid SAN like: Pe2-e4, Rc1c4, Qf3xf7
@@ -1335,18 +1317,16 @@ namespace Chessharp.Core
                 if (matchCondition.IsMatch(cleanMove))
                 {
                     piece = matches[1].Value;
-                    from = matches[2].Value;
-                    to = matches[3].Value;
+                    from  = matches[2].Value;
+                    to    = matches[3].Value;
                     promotion = matches[4].Value;
 
                 }
             }
 
-            Move[] moves = GenerateMoves(null);
+            List<Move> moves = GenerateMoves(null);
 
-            Console.WriteLine("Moves : " + moves.Length);
-
-            for (int i = 0, len = moves.Length; i < len; i++)
+            for (int i = 0, len = moves.Count; i < len; i++)
             {
                 // try the strict parser first, then the sloppy parser if requested
                 // by the user
@@ -1354,10 +1334,23 @@ namespace Chessharp.Core
                 {
                     return moves[i];
                 }
-                Move moveI = moves[i];
-                if (matches != null && (piece == "" || piece.ToLower() == moveI.Piece) && SQUARES[from] == Convert.ToInt32(moveI.From) && SQUARES[to] == Convert.ToInt32(moveI.To) && (promotion == "" || promotion.ToLower() == moveI.Promotion))
+                Move moveItem = moves[i];
+
+
+                int squaresFrom = -1;
+                if (from != "") {
+                    squaresFrom = SQUARES[from];
+                }
+
+                int squaresTo = -1;
+                if (to != "")
                 {
-                    return moveI;
+                    squaresTo = SQUARES[to];
+                }
+
+                if (matches.Count != 0 && (piece == "" || piece.ToLower() == moveItem.Piece) && squaresFrom == Convert.ToInt32(moveItem.From) && squaresTo == Convert.ToInt32(moveItem.To) && (promotion == "" || promotion.ToLower() == moveItem.Promotion))
+                {
+                    return moveItem;
                 }
             }
 
@@ -1366,7 +1359,6 @@ namespace Chessharp.Core
 
         public string MoveToSan(Move move, bool sloppy)
         {
-
             string output = "";
             int moveFlagsInt = Convert.ToInt32(move.Flags);
             int moveFromInt = Convert.ToInt32(move.From);
@@ -1419,7 +1411,7 @@ namespace Chessharp.Core
                     output += "+";
                 }
             }
-            this.UndoMove();
+            UndoMove();
 
             return output;
         }
@@ -1437,14 +1429,48 @@ namespace Chessharp.Core
 
         public bool InCheckmate()
         {
-            Move[] generateMoves = GenerateMoves(null);
-            return this.InCheck() && generateMoves.Length == 0;
+            List<Move> generateMoves = GenerateMoves(null);
+            return InCheck() && generateMoves.Count == 0;
         }
 
         public bool InStalemate()
         {
-            Move[] generateMoves = GenerateMoves(null);
-            return !InCheck() && generateMoves.Length == 0;
+            List<Move> generateMoves = GenerateMoves(null);
+            return !InCheck() && generateMoves.Count == 0;
+        }
+
+        public bool InThreefoldRepetition()
+        {
+            List<Move> moves = new List<Move>();
+            Dictionary<string, int> positions = new Dictionary<string, int>();
+            bool repetition = false;
+
+            while (true)
+            {
+                Move move = UndoMove();
+                if (move == null) {
+                    break;
+                }
+                moves.Add(move);
+            }
+
+            while (true) {
+                string generateFen = GenerateFen();
+                List<string> fenSplit = new List<string>(generateFen.Split(" "));
+                string finalFen = string.Join(" ", fenSplit.GetRange(2, 2));
+
+                positions.Add(finalFen, (positions.ContainsKey(finalFen)) ? positions[finalFen] + 1 : 1);
+
+                if (positions[finalFen] >= 3) {
+                    repetition = true;
+                }
+                if (moves.Count == 0) {
+                    break;
+                }
+                MakeMove(moves[moves.Count - 1]);
+            }
+
+            return repetition;
         }
 
         public string GetDisambiguator(Move move, bool sloppy)
@@ -1452,7 +1478,7 @@ namespace Chessharp.Core
             Dictionary<string, bool> options = new Dictionary<string, bool>() {
                 { "legal",  !sloppy }
             };
-            Move[] moves = GenerateMoves(options);
+            List<Move> moves = GenerateMoves(options);
 
             string from = move.From;
             string to = move.To;
@@ -1462,7 +1488,7 @@ namespace Chessharp.Core
             int sameRank = 0;
             int sameFile = 0;
 
-            for (int i = 0, len = moves.Length; i < len; i++)
+            for (int i = 0, len = moves.Count; i < len; i++)
             {
                 Move movesI = moves[i];
                 string ambigFrom = movesI.From;
@@ -1519,37 +1545,40 @@ namespace Chessharp.Core
             return "";
         }
 
-        public Dictionary<string, string> UndoMove()
+        public Move UndoMove()
         {
-            Dictionary<string, object> old = HISTORY;
-            if (old == null)
+            History oldHistory = null;
+            if (HISTORY.Count > 0) {
+                oldHistory = HISTORY[HISTORY.Count - 1];
+            }
+            if (oldHistory == null)
             {
                 return null;
             }
 
-            Dictionary<string, string> move = (Dictionary<string, string>)old["move"];
-            KINGS      = (Dictionary<string, int>)old["kings"];
-            TURN       = old["turn"].ToString();
-            CASTLING   = (Dictionary<string, int>)old["castling"];
-            EPSQUARE   = Convert.ToInt32(old["ep_square"]);
-            HALFMOVES  = old["half_moves"].ToString();
-            MOVENUMBER = old["move_number"].ToString();
+            Move move  = oldHistory.Move;
+            KINGS      = oldHistory.Kings;
+            TURN       = oldHistory.Turn;
+            CASTLING   = oldHistory.Castling;
+            EPSQUARE   = oldHistory.EpSquare;
+            HALFMOVES  = oldHistory.HalfMoves;
+            MOVENUMBER = oldHistory.MoveNumber;
 
             var us = TURN;
             var them = SwapColor(TURN);
 
-            int moveFrom = Convert.ToInt32(move["from"]);
-            int moveTo = Convert.ToInt32(move["to"]);
-            int moveFlags = Convert.ToInt32(move["flags"]);
+            int moveFrom  = Convert.ToInt32(move.From);
+            int moveTo    = Convert.ToInt32(move.To);
+            int moveFlags = Convert.ToInt32(move.Flags);
 
             BOARD[moveFrom] = BOARD[moveTo];
-            BOARD[moveFrom]["type"] = move["piece"];  // to undo any promotions
+            BOARD[moveFrom]["type"] = move.Piece;  // to undo any promotions
             BOARD[moveTo] = null;
 
             if ((moveFlags & BITS["CAPTURE"]) != 0)
             {
                 BOARD[moveTo] = new Dictionary<string, string>() {
-                    { "type", move["captured"] },
+                    { "type",  move.Captured },
                     { "color", them }
                 };
             }
@@ -1570,7 +1599,7 @@ namespace Chessharp.Core
                 };
             }
 
-            int moveFlagsInt = Convert.ToInt32(move["flags"]);
+            int moveFlagsInt = Convert.ToInt32(move.Flags);
 
             if ((moveFlagsInt & (BITS["KSIDE_CASTLE"] | BITS["QSIDE_CASTLE"])) != 0)
             {
@@ -1654,7 +1683,6 @@ namespace Chessharp.Core
 
         public bool InsufficientMaterial()
         {
-
             Dictionary<string, int> pieces = new Dictionary<string, int>();
             int[] bishops = new int[1];
             int numPieces = 0;
@@ -1712,7 +1740,7 @@ namespace Chessharp.Core
             for (int i = SQUARES["a8"]; i <= SQUARES["h1"]; i++)
             {
                 /* display the rank */
-                if (this.File(i) == 0)
+                if (File(i) == 0)
                 {
                     s += " " + "87654321"[Rank(i)] + " |";
                 }
@@ -1746,19 +1774,20 @@ namespace Chessharp.Core
         public Move MakePretty(Move uglyMove)
         {
             Move move = Clone(uglyMove);
-            move.San = MoveToSan(move, false);
-            move.To = Algebraic(Convert.ToInt32(move.To));
+            move.San  = MoveToSan(move, false);
+            move.To   = Algebraic(Convert.ToInt32(move.To));
             move.From = Algebraic(Convert.ToInt32(move.From));
 
-            int flags = 0;
+            string flags = "";
 
             foreach (KeyValuePair<string, int> bit in BITS)
             {
                 if ((Convert.ToInt32(BITS[bit.Key]) & Convert.ToInt32(move.Flags)) != 0)
                 {
-                    flags += Convert.ToInt32(FLAGS[bit.Key]);
+                    flags += FLAGS[bit.Key];
                 }
             }
+
             move.Flags = flags;
             return move;
         }
@@ -1780,9 +1809,9 @@ namespace Chessharp.Core
             }
         */
 
-        public Move[] Clone(Move[] obj)
+        public List<Move> Clone(Move[] obj)
         {
-            Move[] dupe = new Move[] {};
+            List<Move> dupe = new List<Move>();
 
             for (int i = 0; i < obj.Length; i++) {
                 Move cloneResult = Clone(obj[i]);
@@ -1795,6 +1824,15 @@ namespace Chessharp.Core
         public Move Clone(Move obj)
         {
             return (Move) obj.Clone();
+        }
+
+        public int Perft(int depth)
+        {
+            Dictionary<string, bool> param = new Dictionary<string, bool>();
+            param.Add("legal", false);
+
+            List<Move> moves = GenerateMoves(param);
+            return 0;
         }
     }
 }

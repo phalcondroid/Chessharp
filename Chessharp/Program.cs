@@ -12,9 +12,14 @@ namespace Chessharp
             Console.WriteLine("Welcome to Chessharp");
             try {
                 Chess chess = new Chess();
-                Move move = chess.Move("e4", null);
+                Move move = chess.Move("e4");
 
-                Console.WriteLine(move.From);
+                Console.WriteLine("color {0}", move.Color);
+                Console.WriteLine("from {0}",  move.From);
+                Console.WriteLine("to {0}",    move.To);
+                Console.WriteLine("flags {0}", move.Flags);
+                Console.WriteLine("piece {0}", move.Piece);
+
             } catch (Exception e) {
                 Console.WriteLine("Excetion: " + e.Message);
                 Console.WriteLine("Trace: " + e.StackTrace);
