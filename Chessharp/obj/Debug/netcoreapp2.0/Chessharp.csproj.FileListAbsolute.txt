@@ -8,3 +8,4 @@
 /Users/julianmolina/Projects/Chessharp/Chessharp/obj/Debug/netcoreapp2.0/Chessharp.AssemblyInfo.cs
 /Users/julianmolina/Projects/Chessharp/Chessharp/obj/Debug/netcoreapp2.0/Chessharp.dll
 /Users/julianmolina/Projects/Chessharp/Chessharp/obj/Debug/netcoreapp2.0/Chessharp.pdb
+/Users/julianmolina/Projects/Chessharp/Chessharp/obj/Debug/netcoreapp2.0/Chessharp.csprojResolveAssemblyReference.cache

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Chessharp.Core;
+using Chessharp.Core.Structures;
 
 namespace Chessharp
 {
@@ -11,12 +12,9 @@ namespace Chessharp
             Console.WriteLine("Welcome to Chessharp");
             try {
                 Chess chess = new Chess();
-                Dictionary<string, string> move = chess.Move("e4", null);
+                Move move = chess.Move("e4", null);
 
-                foreach (KeyValuePair<string, string> entry in move)
-                {
-                    Console.WriteLine("Key" + entry.Key + " Value : " + entry.Value + "\n");
-                }
+                Console.WriteLine(move.From);
             } catch (Exception e) {
                 Console.WriteLine("Excetion: " + e.Message);
                 Console.WriteLine("Trace: " + e.StackTrace);

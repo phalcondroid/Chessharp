@@ -17,6 +17,6 @@
     <Compile Remove="Core\Structures\RookStructItem.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Core\zd" Condition=" '$(EnableDefaultCompileItems)' == 'true' " />
+    <None Include="Core\zd" />
   </ItemGroup>
 </Project>

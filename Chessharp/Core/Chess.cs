@@ -1,23 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using Chessharp.Core.Structures;
 
 namespace Chessharp.Core
 {
     public class Chess : Core
     {
-        public Dictionary<string, string> Move(Dictionary<string, string> moveParam, Dictionary<string, bool> options)
+        public Move Move(Move moveParam, Dictionary<string, bool> options)
         {
-            Dictionary<string, string> move = moveParam;
-            Dictionary<string, string>[] moves = GenerateMoves(null);
-            Dictionary<string, string> moveObj = new Dictionary<string, string>() { };
+            Move move = moveParam;
+            Move[] moves = GenerateMoves(null);
+            Move moveObj = new Move() { };
 
             /* convert the pretty move object to an ugly move object */
             for (int i = 0, len = moves.Length; i < len; i++)
             {
-                Dictionary<string, string> movesI = moves[i];
-                int moveToInt = Convert.ToInt32(movesI["to"]);
-                string moveFromInt = move["from"];
-                if (moveFromInt == Algebraic(Convert.ToInt32(movesI["from"])) && move["to"] == this.Algebraic(moveToInt) && (!(movesI.ContainsKey("promotion")) || move["promotion"] == movesI["promotion"]))
+                Move movesI = moves[i];
+                int moveToInt = Convert.ToInt32(movesI.To);
+                string moveFromInt = move.From;
+                if (moveFromInt == Algebraic(Convert.ToInt32(movesI.From)) && move.To == this.Algebraic(moveToInt) && (!(movesI.Promotion != null || move.Promotion == movesI.Promotion)))
                 {
                     moveObj = moves[i];
                     break;
@@ -28,12 +29,12 @@ namespace Chessharp.Core
                 return moveObj;
             }
 
-            Dictionary<string, string> prettyMove = this.MakePretty(moveObj);
+            Move prettyMove = this.MakePretty(moveObj);
             MakeMove(moveObj);
             return prettyMove;
         }
 
-        public Dictionary<string, string> Move(string moveParam, Dictionary<string, bool> options)
+        public Move Move(string moveParam, Dictionary<string, bool> options)
         {
             /* The move function can be called with in the following parameters:
              *
@@ -49,11 +50,10 @@ namespace Chessharp.Core
             // disambiguation bugs in Fritz and Chessbase
             bool sloppy = (options != null && options.ContainsKey("sloppy")) ? options["sloppy"] : false;
 
-            Dictionary<string, string> moveObj = new Dictionary<string, string>() {};
+            Move moveObj = new Move() {};
 
-            Console.WriteLine("move" + moveParam);
             moveObj = MoveFromSan(moveParam, sloppy);
-            Console.WriteLine("move" + moveObj.ToString());
+            Console.WriteLine("move_obj : " + moveObj.ToString());
 
             /* failed to find move */
             if (moveObj == null)
@@ -61,7 +61,7 @@ namespace Chessharp.Core
                 return moveObj;
             }
 
-            Dictionary<string, string> prettyMove = this.MakePretty(moveObj);
+            Move prettyMove = this.MakePretty(moveObj);
             MakeMove(moveObj);
             return prettyMove;
         }
