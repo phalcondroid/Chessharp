@@ -9,14 +9,33 @@ namespace Chessharp
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Welcome to Chessharp");
+            //Console.WriteLine("Welcome to Chessharp");
             try {
-                Chess chess = new Chess();//"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-                List<string> legalMoves = chess.Moves();
+                // 4r3/8/2p2PPk/1p6/pP2p1R1/P1B5/2P2K2/3r4 w - - 1 45
+                Chess chess = new Chess("4r3/8/2p2PPk/1p6/pP2p1R1/P1B5/2P2K2/3r4 w - - 1 45");//"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
+                //bool result = chess.Load("4r3/8/2p2PPk/1p6/pP2p1R1/P1B5/2P2K2/3r4 w - - 1 45");
+
+                //Console.WriteLine(
+                //    "Load : {0}",
+                //    result.ToString()
+                //);
+
+                Console.Write(chess.GetAscii());
+
+                Dictionary<string, bool> p = new Dictionary<string, bool>() {
+                    { "verbose", true }
+                };
+                List<Move> legalMoves = chess.Moves(p);
                 for (int i = 0; i < legalMoves.Count; i++)
                 {
-                    Console.WriteLine(legalMoves[i]);
+                    Console.Write("Color " + legalMoves[i].Color + " ");
+                    Console.Write("From " + legalMoves[i].From + " ");
+                    Console.Write("To " + legalMoves[i].To + " ");
+                    Console.Write("Flags " + legalMoves[i].Flags + " ");
+                    Console.Write("Piece " + legalMoves[i].Piece + " ");
+                    Console.Write("San " + legalMoves[i].San + " ");
+                    Console.WriteLine("");
                 }
 
                 /*

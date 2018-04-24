@@ -84,7 +84,7 @@ namespace Chessharp.Core
 
                 if (move.From == Algebraic(Convert.ToInt32(moveItem.From)) && move.To == Algebraic(Convert.ToInt32(moveItem.To)) && (!(moveItem.Promotion != null && move.Promotion == moveItem.Promotion)))
                 {
-                    Console.WriteLine("im here");
+                    //Console.WriteLine("im here");
                     moveObj = moves[i];
                     break;
                 }
@@ -160,12 +160,24 @@ namespace Chessharp.Core
         public List<string> Moves()
         {
             List<Move> uglyMoves = GenerateMoves(null);
-            List<string> moves = new List<string>();
+            List<string> moves   = new List<string>();
 
+            int ind = 1;
             for (int i = 0, len = uglyMoves.Count; i < len; i++) {
-                //moves.push(move_to_san(ugly_moves[i], false));
+
+                ind++;
+                Console.WriteLine("cuente {0}", ind.ToString());
+
+                Console.Write("color {0} ", uglyMoves[i].Color);
+                Console.Write("from {0} ",  uglyMoves[i].From);
+                Console.Write("to {0} ",    uglyMoves[i].To);
+                Console.Write("flags {0} ", uglyMoves[i].Flags);
+                Console.WriteLine("piece {0}", uglyMoves[i].Piece);
+                Console.WriteLine("\n");
+
                 moves.Add(MoveToSan(uglyMoves[i], false));
             }
+
             return moves;
         }
 
@@ -176,7 +188,6 @@ namespace Chessharp.Core
 
             for (int i = 0, len = uglyMoves.Count; i < len; i++)
             {
-                //moves.push(make_pretty(uglyMoves[i]));
                 moves.Add(MakePretty(uglyMoves[i]));
             }
             return moves;
@@ -254,6 +265,7 @@ namespace Chessharp.Core
 
             while (reversedHistory.Count > 0) {
                 Move move = reversedHistory[reversedHistory.Count - 1];
+                reversedHistory.RemoveAt(reversedHistory.Count - 1);
                 moveHistory.Add(MoveToSan(move, false));
                 MakeMove(move);
             }
@@ -268,9 +280,7 @@ namespace Chessharp.Core
             bool verbose = (options != null && options.ContainsKey("verbose")) ? options["verbose"] : false;
 
             while (HISTORY.Count > 0)
-            {
-                reversedHistory.Add(UndoMove());
-            }
+                reversedHistory.Add(UndoMove());            
 
             while (reversedHistory.Count > 0)
             {
