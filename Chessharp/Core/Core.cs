@@ -1114,172 +1114,179 @@ namespace Chessharp.Core
             string them = SwapColor(us);
             Dictionary<string, int> secondRank = new Dictionary<string, int>() { { "b", RANK_7 }, { "w", RANK_2 } };
 
-            int firstSq = SQUARES["a8"];
-            int lastSq  = SQUARES["h1"];
-            bool singleSquare = false;
+            try {
+                
+                int firstSq = SQUARES["a8"];
+                int lastSq = SQUARES["h1"];
+                bool singleSquare = false;
 
-            /* do we want legal moves? */
-            bool conditionLegal = (options == null || !options.ContainsKey("legal"));
-            bool legal = conditionLegal;
+                /* do we want legal moves? */
+                bool conditionLegal = (options == null || !options.ContainsKey("legal"));
+                bool legal = conditionLegal;
 
-            /* are we generating moves for a single square? */
-            if (options != null && options.ContainsKey("square"))
-            {
-                if (SQUARES.ContainsKey(options["square"].ToString()))
+                /* are we generating moves for a single square? */
+                if (options != null && options.ContainsKey("square"))
                 {
-                    firstSq = lastSq = SQUARES[options["square"].ToString()];
-                    singleSquare = true;
-                }
-                else
-                {
-                    /* invalid square */
-                    return new List<Move>();
-                }
-            }
-
-            List<Move> moves = new List<Move>();
-
-            for (int i = firstSq; i <= lastSq; i++)
-            {
-                /* did we run off the end of the board */
-                if ((i & 0x88) != 0)
-                {
-                    i += 7; continue;
-                }
-
-                Dictionary<string, string> piece = BOARD[i];
-
-                if (piece == null || piece["color"] != us)
-                {
-                    continue;
-                }
-
-                if (piece["type"] == PAWN)
-                {
-                    /* single square, non-capturing */
-                    int square = i + PAWN_OFFSETS[us][0];
-                    if (BOARD[square] == null)
+                    if (SQUARES.ContainsKey(options["square"].ToString()))
                     {
-                        moves = AddMove(BOARD, moves, i.ToString(), square.ToString(), BITS["NORMAL"]);
-
-                        /* double square */
-                        square = i + PAWN_OFFSETS[us][1];
-                        if (secondRank[us] == Rank(i) && BOARD[square] == null)
-                        {
-                            moves = AddMove(BOARD, moves, i.ToString(), square.ToString(), BITS["BIG_PAWN"]);
-                        }
+                        firstSq = lastSq = SQUARES[options["square"].ToString()];
+                        singleSquare = true;
                     }
-
-                    /* pawn captures */
-                    for (int j = 2; j < 4; j++)
+                    else
                     {
-                        square = i + PAWN_OFFSETS[us][j];
-                        if ((square & 0x88) != 0)
-                        {
-                            continue;
-                        }
-                        Dictionary<string, string> boardSquare = BOARD[square];
-                        if (boardSquare != null && boardSquare["color"] == them)
-                        {
-                            moves = AddMove(BOARD, moves, i.ToString(), square.ToString(), BITS["CAPTURE"]);
-                        }
-                        else if (square == EPSQUARE)
-                        {
-                            moves = AddMove(BOARD, moves, i.ToString(), EPSQUARE.ToString(), BITS["EP_CAPTURE"]);
-                        }
+                        /* invalid square */
+                        return new List<Move>();
                     }
                 }
-                else
-                {
-                    for (int j = 0, len2 = PIECE_OFFSETS[piece["type"]].Length; j < len2; j++)
-                    {
-                        int offset = PIECE_OFFSETS[piece["type"]][j];
-                        int square = i;
 
-                        while (true)
+                List<Move> moves = new List<Move>();
+
+                for (int i = firstSq; i <= lastSq; i++)
+                {
+                    /* did we run off the end of the board */
+                    if ((i & 0x88) != 0)
+                    {
+                        i += 7; continue;
+                    }
+
+                    Dictionary<string, string> piece = BOARD[i];
+
+                    if (piece == null || piece["color"] != us)
+                    {
+                        continue;
+                    }
+
+                    if (piece["type"] == PAWN)
+                    {
+                        /* single square, non-capturing */
+                        int square = i + PAWN_OFFSETS[us][0];
+                        if (BOARD[square] == null)
                         {
-                            square += offset;
+                            moves = AddMove(BOARD, moves, i.ToString(), square.ToString(), BITS["NORMAL"]);
+
+                            /* double square */
+                            square = i + PAWN_OFFSETS[us][1];
+                            if (secondRank[us] == Rank(i) && BOARD[square] == null)
+                            {
+                                moves = AddMove(BOARD, moves, i.ToString(), square.ToString(), BITS["BIG_PAWN"]);
+                            }
+                        }
+
+                        /* pawn captures */
+                        for (int j = 2; j < 4; j++)
+                        {
+                            square = i + PAWN_OFFSETS[us][j];
                             if ((square & 0x88) != 0)
                             {
-                                break;
+                                continue;
                             }
                             Dictionary<string, string> boardSquare = BOARD[square];
-                            if (boardSquare == null)
+                            if (boardSquare != null && boardSquare["color"] == them)
                             {
-                                moves = AddMove(BOARD, moves, i.ToString(), square.ToString(), BITS["NORMAL"]);
+                                moves = AddMove(BOARD, moves, i.ToString(), square.ToString(), BITS["CAPTURE"]);
                             }
-                            else
+                            else if (square == EPSQUARE)
                             {
-                                if (boardSquare["color"] == us)
+                                moves = AddMove(BOARD, moves, i.ToString(), EPSQUARE.ToString(), BITS["EP_CAPTURE"]);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int j = 0, len2 = PIECE_OFFSETS[piece["type"]].Length; j < len2; j++)
+                        {
+                            int offset = PIECE_OFFSETS[piece["type"]][j];
+                            int square = i;
+
+                            while (true)
+                            {
+                                square += offset;
+                                if ((square & 0x88) != 0)
                                 {
                                     break;
                                 }
-                                moves = AddMove(BOARD, moves, i.ToString(), square.ToString(), BITS["CAPTURE"]);
-                                break;
-                            }
+                                Dictionary<string, string> boardSquare = BOARD[square];
+                                if (boardSquare == null)
+                                {
+                                    moves = AddMove(BOARD, moves, i.ToString(), square.ToString(), BITS["NORMAL"]);
+                                }
+                                else
+                                {
+                                    if (boardSquare["color"] == us)
+                                    {
+                                        break;
+                                    }
+                                    moves = AddMove(BOARD, moves, i.ToString(), square.ToString(), BITS["CAPTURE"]);
+                                    break;
+                                }
 
-                            /* break, if knight or king */
-                            if (piece["type"] == "n" || piece["type"] == "k")
-                            {
-                                break;
+                                /* break, if knight or king */
+                                if (piece["type"] == "n" || piece["type"] == "k")
+                                {
+                                    break;
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            /* check for castling if: a) we're generating all moves, or b) we're doing
-            * single square move generation on the king's square
-            */
-            if ((!singleSquare) || lastSq == KINGS[us])
-            {
-                /* king-side castling */
-                if ((CASTLING[us] & BITS["KSIDE_CASTLE"]) != 0)
+                /* check for castling if: a) we're generating all moves, or b) we're doing
+                * single square move generation on the king's square
+                */
+                if ((!singleSquare) || lastSq == KINGS[us])
                 {
-                    int castlingFrom = KINGS[us];
-                    int castlingTo = castlingFrom + 2;
-
-                    if (BOARD[castlingFrom + 1] == null && BOARD[castlingTo] == null && !Attacked(them, KINGS[us]) && !Attacked(them, castlingFrom + 1) && !Attacked(them, castlingTo))
+                    /* king-side castling */
+                    if ((CASTLING[us] & BITS["KSIDE_CASTLE"]) != 0)
                     {
-                        moves = AddMove(BOARD, moves, KINGS[us].ToString(), castlingTo.ToString(), BITS["KSIDE_CASTLE"]);
+                        int castlingFrom = KINGS[us];
+                        int castlingTo = castlingFrom + 2;
+
+                        if (BOARD[castlingFrom + 1] == null && BOARD[castlingTo] == null && !Attacked(them, KINGS[us]) && !Attacked(them, castlingFrom + 1) && !Attacked(them, castlingTo))
+                        {
+                            moves = AddMove(BOARD, moves, KINGS[us].ToString(), castlingTo.ToString(), BITS["KSIDE_CASTLE"]);
+                        }
+                    }
+
+                    /* queen-side castling */
+                    if ((CASTLING[us] & BITS["QSIDE_CASTLE"]) != 0)
+                    {
+                        int castlingFrom = KINGS[us];
+                        int castlingTo = castlingFrom - 2;
+
+                        if (BOARD[castlingFrom - 1] == null && BOARD[castlingFrom - 2] == null && BOARD[castlingFrom - 3] == null && !Attacked(them, KINGS[us]) && !Attacked(them, castlingFrom - 1) && !Attacked(them, castlingTo))
+                        {
+                            moves = AddMove(BOARD, moves, KINGS[us].ToString(), castlingTo.ToString(), BITS["QSIDE_CASTLE"]);
+                        }
                     }
                 }
+                /*for (int i = 0; ) {
 
-                /* queen-side castling */
-                if ((CASTLING[us] & BITS["QSIDE_CASTLE"]) != 0)
+                }
+                string s = string.Join(";", moves);*/
+
+                if (!legal)
                 {
-                    int castlingFrom = KINGS[us];
-                    int castlingTo = castlingFrom - 2;
+                    return moves;
+                }
 
-                    if (BOARD[castlingFrom - 1] == null && BOARD[castlingFrom - 2] == null && BOARD[castlingFrom - 3] == null && !Attacked(them, KINGS[us]) && !Attacked(them, castlingFrom - 1) && !Attacked(them, castlingTo))
+                /* filter out illegal moves */
+                List<Move> legalMoves = new List<Move>();
+                for (int i = 0, len3 = moves.Count; i < len3; i++)
+                {
+                    MakeMove(moves[i]);
+                    if (!KingAttacked(us))
                     {
-                        moves = AddMove(BOARD, moves, KINGS[us].ToString(), castlingTo.ToString(), BITS["QSIDE_CASTLE"]);
+                        legalMoves.Add(moves[i]);
                     }
+                    UndoMove();
                 }
-            }
-            /*for (int i = 0; ) {
-                
-            }
-            string s = string.Join(";", moves);*/
 
-            if (!legal)
+                return legalMoves;
+            } 
+            catch
             {
-                return moves;
+                return null;
             }
-
-            /* filter out illegal moves */
-            List<Move> legalMoves = new List<Move>();
-            for (int i = 0, len3 = moves.Count; i < len3; i++)
-            {
-                MakeMove(moves[i]);
-                if (!KingAttacked(us))
-                {
-                    legalMoves.Add(moves[i]);
-                }
-                UndoMove();
-            }
-
-            return legalMoves;
         }
 
         // parses all of the decorators out of a SAN string
@@ -1430,13 +1437,13 @@ namespace Chessharp.Core
         public bool InCheckmate()
         {
             List<Move> generateMoves = GenerateMoves(null);
-            return InCheck() && generateMoves.Count == 0;
+            return InCheck() && generateMoves == null || generateMoves.Count == 0;
         }
 
         public bool InStalemate()
         {
             List<Move> generateMoves = GenerateMoves(null);
-            return !InCheck() && generateMoves.Count == 0;
+            return !InCheck() && generateMoves == null || generateMoves.Count == 0;
         }
 
         public bool InThreefoldRepetition()
@@ -1571,57 +1578,72 @@ namespace Chessharp.Core
             int moveTo    = Convert.ToInt32(move.To);
             int moveFlags = Convert.ToInt32(move.Flags);
 
-            BOARD[moveFrom] = BOARD[moveTo];
-            BOARD[moveFrom]["type"] = move.Piece;  // to undo any promotions
-            BOARD[moveTo] = null;
+            //Console.WriteLine("move.to {0}", move.To);
+            //Console.WriteLine("move.from {0}",  move.From);
 
-            if ((moveFlags & BITS["CAPTURE"]) != 0)
+            //Console.WriteLine("board[move.from] {0}", BOARD[moveFrom]);
+            //Console.WriteLine("board[move.to] type {0} - color {1}", BOARD[moveTo]["type"], BOARD[moveTo]["color"]);
+
+            try
             {
-                BOARD[moveTo] = new Dictionary<string, string>() {
+                //if not more posible moves
+                BOARD[moveFrom] = BOARD[moveTo];
+                BOARD[moveFrom]["type"] = move.Piece; // to undo any promotions
+                BOARD[moveTo] = null;
+
+                if ((moveFlags & BITS["CAPTURE"]) != 0)
+                {
+                    BOARD[moveTo] = new Dictionary<string, string>() {
                     { "type",  move.Captured },
                     { "color", them }
                 };
-            }
-            else if ((moveFlags & BITS["EP_CAPTURE"]) != 0)
-            {
-                int index;
-                if (us == BLACK)
-                {
-                    index = moveTo - 16;
                 }
-                else
+                else if ((moveFlags & BITS["EP_CAPTURE"]) != 0)
                 {
-                    index = moveTo + 16;
-                }
-                BOARD[index] = new Dictionary<string, string>() {
+                    int index;
+                    if (us == BLACK)
+                    {
+                        index = moveTo - 16;
+                    }
+                    else
+                    {
+                        index = moveTo + 16;
+                    }
+                    BOARD[index] = new Dictionary<string, string>() {
                     { "type",  PAWN },
                     { "color", them }
                 };
+                }
+
+                int moveFlagsInt = Convert.ToInt32(move.Flags);
+
+                if ((moveFlagsInt & (BITS["KSIDE_CASTLE"] | BITS["QSIDE_CASTLE"])) != 0)
+                {
+                    int castlingTo = 0;
+                    int castlingFrom = 0;
+
+                    if ((moveFlags & BITS["KSIDE_CASTLE"]) != 0)
+                    {
+                        castlingTo = moveTo + 1;
+                        castlingFrom = moveTo - 1;
+                    }
+                    else if ((moveFlags & BITS["QSIDE_CASTLE"]) != 0)
+                    {
+                        castlingTo = moveTo - 2;
+                        castlingFrom = moveTo + 1;
+                    }
+
+                    BOARD[castlingTo] = BOARD[castlingFrom];
+                    BOARD[castlingFrom] = null;
+                }
+
+                return move;
             }
-
-            int moveFlagsInt = Convert.ToInt32(move.Flags);
-
-            if ((moveFlagsInt & (BITS["KSIDE_CASTLE"] | BITS["QSIDE_CASTLE"])) != 0)
+            catch
             {
-                int castlingTo = 0;
-                int castlingFrom = 0;
-
-                if ((moveFlags & BITS["KSIDE_CASTLE"]) != 0)
-                {
-                    castlingTo = moveTo + 1;
-                    castlingFrom = moveTo - 1;
-                }
-                else if ((moveFlags & BITS["QSIDE_CASTLE"]) != 0)
-                {
-                    castlingTo = moveTo - 2;
-                    castlingFrom = moveTo + 1;
-                }
-
-                BOARD[castlingTo] = BOARD[castlingFrom];
-                BOARD[castlingFrom] = null;
+                return null;
             }
 
-            return move;
         }
 
         public bool Attacked(string color, int square)
@@ -1684,7 +1706,7 @@ namespace Chessharp.Core
         public bool InsufficientMaterial()
         {
             Dictionary<string, int> pieces = new Dictionary<string, int>();
-            int[] bishops = new int[1];
+            List<int> bishops = new List<int>();
             int numPieces = 0;
             int sqColor = 0;
 
@@ -1702,7 +1724,7 @@ namespace Chessharp.Core
                     pieces[piece["type"]] = (pieces.ContainsKey(piece["type"])) ? Convert.ToInt32(pieces[piece["type"]]) + 1 : 1;
                     if (piece["type"] == BISHOP)
                     {
-                        bishops[bishops.Length] = sqColor;
+                        bishops.Add(sqColor);
                     }
                     numPieces++;
                 }
@@ -1720,7 +1742,7 @@ namespace Chessharp.Core
             else if (numPieces == pieces[BISHOP] + 2)
             {
                 int sum = 0;
-                int len = bishops.Length;
+                int len = bishops.Count;
                 for (var i = 0; i < len; i++)
                 {
                     sum += bishops[i];

@@ -60,9 +60,51 @@ namespace Chessharp.Core
                 return moveObj;
             }
 
-            Move prettyMove = this.MakePretty(moveObj);
-            MakeMove(moveObj);
-            return prettyMove;
+            try
+            {
+                Move prettyMove = MakePretty(moveObj);
+                MakeMove(moveObj);
+                return prettyMove;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public Move Move(Move move)
+        {
+            List<Move> moves = GenerateMoves(null);
+            Move moveObj = new Move() { };
+
+            /* convert the pretty move object to an ugly move object */
+            for (int i = 0, len = moves.Count; i < len; i++)
+            {
+                Move moveItem = moves[i];
+
+                if (move.From == Algebraic(Convert.ToInt32(moveItem.From)) && move.To == Algebraic(Convert.ToInt32(moveItem.To)) && (!(moveItem.Promotion != null && move.Promotion == moveItem.Promotion)))
+                {
+                    Console.WriteLine("im here");
+                    moveObj = moves[i];
+                    break;
+                }
+            }
+
+
+            if (moveObj == null)
+            {
+                return moveObj;
+            }
+
+            try {
+                Move prettyMove = MakePretty(moveObj);
+                MakeMove(moveObj);
+                return prettyMove;
+            } 
+            catch
+            {
+                return null;
+            }
         }
 
         public Move Move(string moveParam, Dictionary<string, bool> options)
@@ -70,9 +112,7 @@ namespace Chessharp.Core
             bool sloppy = (options != null && options.ContainsKey("sloppy")) ? options["sloppy"] : false;
 
             Move moveObj = new Move() {};
-            Console.WriteLine("MOVE PARAM {0}", moveParam);
             moveObj = MoveFromSan(moveParam, sloppy);
-            Console.WriteLine("move_obj : " + moveObj.ToString());
 
             /* failed to find move */
             if (moveObj == null)
@@ -80,9 +120,16 @@ namespace Chessharp.Core
                 return moveObj;
             }
 
-            Move prettyMove = MakePretty(moveObj);
-            MakeMove(moveObj);
-            return prettyMove;
+            try
+            {
+                Move prettyMove = MakePretty(moveObj);
+                MakeMove(moveObj);
+                return prettyMove;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public Move Move(string moveParam)
@@ -90,9 +137,7 @@ namespace Chessharp.Core
             bool sloppy = false;
 
             Move moveObj = new Move() { };
-            Console.WriteLine("MOVE PARAM {0}", moveParam);
             moveObj = MoveFromSan(moveParam, sloppy);
-            Console.WriteLine("move_obj : " + moveObj.ToString());
 
             /* failed to find move */
             if (moveObj == null)
@@ -100,9 +145,16 @@ namespace Chessharp.Core
                 return moveObj;
             }
 
-            Move prettyMove = MakePretty(moveObj);
-            MakeMove(moveObj);
-            return prettyMove;
+            try
+            {
+                Move prettyMove = MakePretty(moveObj);
+                MakeMove(moveObj);
+                return prettyMove;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public List<string> Moves()
@@ -112,7 +164,7 @@ namespace Chessharp.Core
 
             for (int i = 0, len = uglyMoves.Count; i < len; i++) {
                 //moves.push(move_to_san(ugly_moves[i], false));
-                moves.Add(MoveToSan(new Move(), false));
+                moves.Add(MoveToSan(uglyMoves[i], false));
             }
             return moves;
         }
