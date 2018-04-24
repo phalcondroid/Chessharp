@@ -10,13 +10,13 @@ namespace Chessharp.Core
 
         public Chess(string fen) : base(fen)
         {
-            Console.WriteLine("Chess(string) - construct \n");
+            //Console.WriteLine("Chess(string) - construct \n");
             FetchSquares();
         }
 
         public Chess() : base()
         {
-            Console.WriteLine("Chess - construct \n");
+            //Console.WriteLine("Chess - construct \n");
             FetchSquares();
         }
 

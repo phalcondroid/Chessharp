@@ -11,8 +11,50 @@ namespace Chessharp
         {
             Console.WriteLine("Welcome to Chessharp");
             try {
-                Chess chess = new Chess("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-                /*Move moveE4 = chess.Move("e4");
+                Chess chess = new Chess();//"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+                List<string> legalMoves = chess.Moves();
+
+                for (int i = 0; i < legalMoves.Count; i++)
+                {
+                    Console.WriteLine(legalMoves[i]);
+                }
+
+                /*
+                Dictionary<string, string> resFen1 = chess.ValidateFen("2n1r3/p1k2pp1/B1p3b1/P7/5bP1/2N1B3/1P2KP2/2R5 b - - 4 25");
+
+                Console.WriteLine(
+                    "Valid {0} ErrorNumber {1} Errors {2}",
+                    resFen1["valid"],
+                    resFen1["error_number"],
+                    resFen1["errors"]
+                );
+
+                Dictionary<string, string> resFen2 = chess.ValidateFen("4r3/8/X12XPk/1p6/pP2p1R1/P1B5/2P2K2/3r4 w - - 1 45");
+
+                Console.WriteLine(
+                    "Valid {0} ErrorNumber {1} Errors {2}",
+                    resFen2["valid"],
+                    resFen2["error_number"],
+                    resFen2["errors"]
+                );
+
+                Move moveToE4 = new Move();
+                moveToE4.From = "e2";
+                moveToE4.To = "e4";
+
+                Move moveE4 = chess.Move(moveToE4);
+
+                Console.WriteLine("color {0}", moveE4.Color);
+                Console.WriteLine("from {0}", moveE4.From);
+                Console.WriteLine("to {0}", moveE4.To);
+                Console.WriteLine("flags {0}", moveE4.Flags);
+                Console.WriteLine("piece {0}", moveE4.Piece);
+
+                Console.Write(chess.GetAscii());
+
+                Console.WriteLine(chess.GetFen());
+
+                Move moveE4 = chess.Move("e4");
 
                 Console.WriteLine("color {0}", moveE4.Color);
                 Console.WriteLine("from {0}",  moveE4.From);
@@ -55,7 +97,6 @@ namespace Chessharp
                 for (int i = 0; i < legalMoves.Count; i++) {
                     Console.WriteLine(legalMoves[i]);
                 }
-                */
 
                 Console.Write(chess.GetAscii());
 
@@ -82,6 +123,8 @@ namespace Chessharp
                     resFen2["error_number"],
                     resFen2["errors"]
                 );
+
+                */
 
             } catch (Exception e) {
                 Console.WriteLine("Excetion: " + e.Message);
