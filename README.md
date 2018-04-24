@@ -15,6 +15,8 @@ detection - basically everything but the AI.
 
   Console.Write(chess.GetAscii());
 ```
+#### Result
+```
 +------------------------+
  8 | r  n  b  q  k  b  n  r |
  7 | p  p  p  p  .  p  p  p |
@@ -26,6 +28,7 @@ detection - basically everything but the AI.
  1 | R  N  B  Q  K  B  N  R |
    +------------------------+
      a  b  c  d  e  f  g  h
+```
 
 ## Get fen
 
@@ -38,7 +41,10 @@ detection - basically everything but the AI.
 
   Console.WriteLine(chess.GetFen());
 ```
+#### Result
+```
 rnbqkbnr/pppp1ppp/8/4p3/4PP2/8/PPPP2PP/RNBQKBNR b  KQkq f3 0 2
+```
 
 ## In Draw
 
@@ -49,6 +55,7 @@ rnbqkbnr/pppp1ppp/8/4p3/4PP2/8/PPPP2PP/RNBQKBNR b  KQkq f3 0 2
       chess.InDraw()
   );
 ```
+#### Result
 In draw True
 
 ## In check mate
@@ -60,6 +67,7 @@ In draw True
       chess.InCheckmate()
   );
 ```
+#### Result
 In check mate True
 
 ## In stalemate
@@ -71,6 +79,7 @@ In check mate True
       chess.InStalemate()
   );
 ```
+#### Result
 In stale mate True
 
 ## In stalemate
@@ -82,6 +91,7 @@ In stale mate True
       chess.InStalemate()
   );
 ```
+#### Result
 In stale mate True
 
 ## Make moves
@@ -99,12 +109,15 @@ In stale mate True
   Console.Write(chess.GetAscii());
 
 ```
+#### Result
+
 color w
 from e2
 to e4
 flags b
 piece p
 
+```
 +------------------------+
  8 | r  n  b  q  k  b  n  r |
  7 | p  p  p  p  p  p  p  p |
@@ -116,6 +129,7 @@ piece p
  1 | R  N  B  Q  K  B  N  R |
    +------------------------+
      a  b  c  d  e  f  g  h
+```
 
 ## Make moves with Move class as parameter
 
@@ -138,12 +152,15 @@ piece p
 
 ```
 
+#### Result
+
 color w
 from e2
 to e4
 flags b
 piece p
 
+```
 +------------------------+
  8 | r  n  b  q  k  b  n  r |
  7 | p  p  p  p  p  p  p  p |
@@ -155,7 +172,7 @@ piece p
  1 | R  N  B  Q  K  B  N  R |
    +------------------------+
      a  b  c  d  e  f  g  h
-
+```
 
 ## Get legal moves
 
@@ -169,7 +186,7 @@ piece p
   }
 
 ```
-
+#### Result
 a3
 a4
 b3
@@ -193,6 +210,7 @@ Nh3
 
 ## Validate fen
 
+### Valid fen result
 ```csharp
   Chess chess = new Chess();
   Dictionary<string, string> resFen1 = chess.ValidateFen("2n1r3/p1k2pp1/B1p3b1/P7/5bP1/2N1B3/1P2KP2/2R5 b - - 4 25");
@@ -205,10 +223,10 @@ Nh3
   );
 
 ```
-
-### Valid fen result
+#### Result
 Valid true ErrorNumber 0 Errors No errors.
 
+### Invalid fen result
 ```csharp
   Chess chess = new Chess();
   Dictionary<string, string> resFen2 = chess.ValidateFen("4r3/8/X12XPk/1p6/pP2p1R1/P1B5/2P2K2/3r4 w - - 1 45");
@@ -221,6 +239,5 @@ Valid true ErrorNumber 0 Errors No errors.
   );
 
 ```
-
-### Invalid fen result
+#### Result
 Valid false ErrorNumber 9 Errors 1st field (piece positions) is invalid [invalid piece].
