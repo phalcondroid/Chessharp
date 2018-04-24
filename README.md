@@ -56,7 +56,9 @@ rnbqkbnr/pppp1ppp/8/4p3/4PP2/8/PPPP2PP/RNBQKBNR b  KQkq f3 0 2
   );
 ```
 #### Result
+```
 In draw True
+```
 
 ## In check mate
 
@@ -68,7 +70,9 @@ In draw True
   );
 ```
 #### Result
+```
 In check mate True
+```
 
 ## In stalemate
 
@@ -80,7 +84,9 @@ In check mate True
   );
 ```
 #### Result
+```
 In stale mate True
+```
 
 ## In stalemate
 
@@ -92,7 +98,9 @@ In stale mate True
   );
 ```
 #### Result
+```
 In stale mate True
+```
 
 ## Make moves
 
@@ -111,13 +119,13 @@ In stale mate True
 ```
 #### Result
 
+```
 color w
 from e2
 to e4
 flags b
 piece p
 
-```
 +------------------------+
  8 | r  n  b  q  k  b  n  r |
  7 | p  p  p  p  p  p  p  p |
@@ -154,13 +162,13 @@ piece p
 
 #### Result
 
+```
 color w
 from e2
 to e4
 flags b
 piece p
 
-```
 +------------------------+
  8 | r  n  b  q  k  b  n  r |
  7 | p  p  p  p  p  p  p  p |
@@ -187,6 +195,7 @@ piece p
 
 ```
 #### Result
+```
 a3
 a4
 b3
@@ -207,6 +216,7 @@ Na3
 Nc3
 Nf3
 Nh3
+```
 
 ## Validate fen
 
@@ -224,7 +234,9 @@ Nh3
 
 ```
 #### Result
+```
 Valid true ErrorNumber 0 Errors No errors.
+```
 
 ### Invalid fen result
 ```csharp
@@ -240,4 +252,6 @@ Valid true ErrorNumber 0 Errors No errors.
 
 ```
 #### Result
+```
 Valid false ErrorNumber 9 Errors 1st field (piece positions) is invalid [invalid piece].
+```
