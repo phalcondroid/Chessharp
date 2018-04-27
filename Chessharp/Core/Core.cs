@@ -9,7 +9,7 @@ namespace Chessharp.Core
     {
         string FEN;
 
-        public string BLACK = "b";
+        string BLACK = "b";
         public string WHITE = "w";
 
         int EMPTY { get; set; } = -1;
@@ -160,9 +160,7 @@ namespace Chessharp.Core
          */
         Dictionary<string, int> KINGS = new Dictionary<string, int>();
 
-        /**
-         *
-         */
+
         Dictionary<string, int> CASTLING = new Dictionary<string, int>();
 
         public string TURN;
@@ -465,9 +463,13 @@ namespace Chessharp.Core
                         { "color", color }
                     };
 
-                    bool put = Put(putParams, Algebraic(square));
-                    if (!put)
-                        //Console.WriteLine("paila");
+                    //Console.WriteLine("square : " + square);
+                    if (square >= 0)
+                    {
+                        bool put = Put(putParams, Algebraic(square));
+                    }
+                    //if (!put)
+                    //Console.WriteLine("paila");
 
                     square++;
                 }
@@ -1020,7 +1022,7 @@ namespace Chessharp.Core
                     CValue[] rookByColor = ROOKS.GetByColor(us);
                     Dictionary<string, int> rookUsItem = rookByColor[i].GetDicStrInt();
 
-                    if (move.From == rookUsItem["square"].ToString() && (CASTLING[us] & rookUsItem["flag"]) != 0)
+                    if (rookUsItem.ContainsKey("square") && move.From == rookUsItem["square"].ToString() && rookUsItem.ContainsKey("flag") && (CASTLING[us] & rookUsItem["flag"]) != 0)
                     {
                         CASTLING[us] ^= rookUsItem["flag"];
                         break;
@@ -1036,7 +1038,7 @@ namespace Chessharp.Core
                     CValue[] rookByColor = ROOKS.GetByColor(them);
                     Dictionary<string, int> rookThemItem = rookByColor[i].GetDicStrInt();
 
-                    if (moveTo == rookThemItem["square"] && (CASTLING[them] & rookThemItem["flag"]) != 0)
+                    if (rookThemItem.ContainsKey("square") && moveTo == rookThemItem["square"] && rookThemItem.ContainsKey("flag") && (CASTLING[them] & rookThemItem["flag"]) != 0)
                     {
                         CASTLING[them] ^= rookThemItem["flag"];
                         break;
@@ -1121,7 +1123,7 @@ namespace Chessharp.Core
             bool singleSquare = false;
 
             /* do we want legal moves? */
-            bool legal = (options != null && options.ContainsKey("legal")) ? options["legal"] == "true" ? true : false : true;
+            bool legal = (options != null && options.ContainsKey("legal")) ? options["legal"].ToLower() == "true" ? true : false : true;
 
             /* are we generating moves for a single square? */
             if (options != null && options.ContainsKey("square"))
@@ -1386,8 +1388,8 @@ namespace Chessharp.Core
         {
             string output = "";
             int moveFlagsInt = Convert.ToInt32(move.Flags);
-            int moveFromInt  = Convert.ToInt32(move.From);
-            int moveFromTo   = Convert.ToInt32(move.To);
+            int moveFromInt = Convert.ToInt32(move.From);
+            int moveFromTo = Convert.ToInt32(move.To);
 
             if ((moveFlagsInt & BITS["KSIDE_CASTLE"]) != 0)
             {
@@ -1508,8 +1510,8 @@ namespace Chessharp.Core
 
         public string GetDisambiguator(Move move, bool sloppy)
         {
-            Dictionary<string, bool> options = new Dictionary<string, bool>() {
-                { "legal",  !sloppy }
+            Dictionary<string, string> options = new Dictionary<string, string>() {
+                { "legal",  (!sloppy).ToString() }
             };
             List<Move> moves = GenerateMoves(options);
 
@@ -1596,9 +1598,9 @@ namespace Chessharp.Core
             TURN = oldHistory.Turn;
             //Console.WriteLine("turn to {0} u", TURN);
 
-            CASTLING   = oldHistory.Castling;
-            EPSQUARE   = oldHistory.EpSquare;
-            HALFMOVES  = oldHistory.HalfMoves;
+            CASTLING = oldHistory.Castling;
+            EPSQUARE = oldHistory.EpSquare;
+            HALFMOVES = oldHistory.HalfMoves;
             MOVENUMBER = oldHistory.MoveNumber;
 
             var us = TURN;
@@ -1614,6 +1616,8 @@ namespace Chessharp.Core
             //Console.WriteLine("board[move.from] {0}", BOARD[moveFrom]);
             //Console.WriteLine("board[move.to] type {0} - color {1}", BOARD[moveTo]["type"], BOARD[moveTo]["color"]);
 
+            //try
+            //{
             //if not more posible moves
             BOARD[moveFrom] = BOARD[moveTo];
 
@@ -1624,10 +1628,10 @@ namespace Chessharp.Core
                 throw new Exception("lol 1");
 
             if (move == null)
-                throw new Exception("lol 3"); 
+                throw new Exception("lol 3");
 
             if (move.Piece == null)
-                throw new Exception("lol 2"); 
+                throw new Exception("lol 2");
 
             BOARD[moveFrom]["type"] = move.Piece; // to undo any promotions
             BOARD[moveTo] = null;
@@ -1700,6 +1704,7 @@ namespace Chessharp.Core
                 }
 
                 /* if empty square or wrong color */
+
                 Dictionary<string, string> piece = BOARD[i];
                 if (BOARD[i] == null || piece["color"] != color) continue;
 
@@ -1887,13 +1892,13 @@ namespace Chessharp.Core
 
         public Move Clone(Move obj)
         {
-            return (Move) obj.Clone();
+            return (Move)obj.Clone();
         }
 
         public int Perft(int depth)
         {
-            Dictionary<string, bool> param = new Dictionary<string, bool>();
-            param.Add("legal", false);
+            Dictionary<string, string> param = new Dictionary<string, string>();
+            param.Add("legal", false.ToString());
 
             List<Move> moves = GenerateMoves(param);
             return 0;

@@ -12,7 +12,7 @@ namespace Chessharp
             //Console.WriteLine("Welcome to Chessharp");
             try {
                 // 4r3/8/2p2PPk/1p6/pP2p1R1/P1B5/2P2K2/3r4 w - - 1 45
-                Chess chess = new Chess("4r3/8/2p2PPk/1p6/pP2p1R1/P1B5/2P2K2/3r4 w - - 1 45");//"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+                Chess chess = new Chess();//Chess("4r3/8/2p2PPk/1p6/pP2p1R1/P1B5/2P2K2/3r4 w - - 1 45");//"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
                 //bool result = chess.Load("4r3/8/2p2PPk/1p6/pP2p1R1/P1B5/2P2K2/3r4 w - - 1 45");
 
@@ -23,8 +23,8 @@ namespace Chessharp
 
                 Console.Write(chess.GetAscii());
 
-                Dictionary<string, bool> p = new Dictionary<string, bool>() {
-                    { "verbose", true }
+                Dictionary<string, string> p = new Dictionary<string, string>() {
+                    { "square", "e2" }
                 };
                 List<Move> legalMoves = chess.Moves(p);
                 for (int i = 0; i < legalMoves.Count; i++)
