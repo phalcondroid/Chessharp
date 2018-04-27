@@ -9,7 +9,7 @@ namespace Chessharp.Core
     {
         string FEN;
 
-        string BLACK = "b";
+        public string BLACK = "b";
         public string WHITE = "w";
 
         int EMPTY { get; set; } = -1;
@@ -160,7 +160,9 @@ namespace Chessharp.Core
          */
         Dictionary<string, int> KINGS = new Dictionary<string, int>();
 
-
+        /**
+         *
+         */
         Dictionary<string, int> CASTLING = new Dictionary<string, int>();
 
         public string TURN;
@@ -1106,7 +1108,7 @@ namespace Chessharp.Core
             return moves;
         }
 
-        public List<Move> GenerateMoves(Dictionary<string, bool> options)
+        public List<Move> GenerateMoves(Dictionary<string, string> options)
         {
             string us = TURN;
             string them = SwapColor(us);
@@ -1119,7 +1121,7 @@ namespace Chessharp.Core
             bool singleSquare = false;
 
             /* do we want legal moves? */
-            bool legal = (options != null && options.ContainsKey("legal")) ? options["legal"] : true;
+            bool legal = (options != null && options.ContainsKey("legal")) ? options["legal"] == "true" ? true : false : true;
 
             /* are we generating moves for a single square? */
             if (options != null && options.ContainsKey("square"))
@@ -1594,9 +1596,9 @@ namespace Chessharp.Core
             TURN = oldHistory.Turn;
             //Console.WriteLine("turn to {0} u", TURN);
 
-            CASTLING = oldHistory.Castling;
-            EPSQUARE = oldHistory.EpSquare;
-            HALFMOVES = oldHistory.HalfMoves;
+            CASTLING   = oldHistory.Castling;
+            EPSQUARE   = oldHistory.EpSquare;
+            HALFMOVES  = oldHistory.HalfMoves;
             MOVENUMBER = oldHistory.MoveNumber;
 
             var us = TURN;
@@ -1612,8 +1614,6 @@ namespace Chessharp.Core
             //Console.WriteLine("board[move.from] {0}", BOARD[moveFrom]);
             //Console.WriteLine("board[move.to] type {0} - color {1}", BOARD[moveTo]["type"], BOARD[moveTo]["color"]);
 
-            //try
-            //{
             //if not more posible moves
             BOARD[moveFrom] = BOARD[moveTo];
 
@@ -1700,7 +1700,6 @@ namespace Chessharp.Core
                 }
 
                 /* if empty square or wrong color */
-
                 Dictionary<string, string> piece = BOARD[i];
                 if (BOARD[i] == null || piece["color"] != color) continue;
 
@@ -1888,7 +1887,7 @@ namespace Chessharp.Core
 
         public Move Clone(Move obj)
         {
-            return (Move)obj.Clone();
+            return (Move) obj.Clone();
         }
 
         public int Perft(int depth)

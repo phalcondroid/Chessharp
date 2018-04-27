@@ -1,9 +1,9 @@
 ﻿<Properties StartupConfiguration="{A6586429-EB9E-4B22-B781-A42E11F5BEB5}|Default">
-  <MonoDevelop.Ide.Workbench ActiveDocument="Chessharp/Core/Core.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Chessharp/Core/Chess.cs">
     <Files>
-      <File FileName="Chessharp/Program.cs" Line="14" Column="92" />
-      <File FileName="Chessharp/Core/Chess.cs" Line="174" Column="34" />
-      <File FileName="Chessharp/Core/Core.cs" Line="1508" Column="29" />
+      <File FileName="Chessharp/Program.cs" Line="36" Column="73" />
+      <File FileName="Chessharp/Core/Chess.cs" Line="184" Column="30" />
+      <File FileName="Chessharp/Core/Core.cs" Line="1595" Column="15" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />

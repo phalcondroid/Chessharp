@@ -10,13 +10,11 @@ namespace Chessharp.Core
 
         public Chess(string fen) : base(fen)
         {
-            //Console.WriteLine("Chess(string) - construct \n");
             FetchSquares();
         }
 
         public Chess() : base()
         {
-            //Console.WriteLine("Chess - construct \n");
             FetchSquares();
         }
 
@@ -90,7 +88,6 @@ namespace Chessharp.Core
                 }
             }
 
-
             if (moveObj == null)
             {
                 return moveObj;
@@ -161,31 +158,16 @@ namespace Chessharp.Core
         {
             List<Move> uglyMoves = GenerateMoves(null);
             List<string> moves   = new List<string>();
-
-            int ind = 1;
             for (int i = 0, len = uglyMoves.Count; i < len; i++) {
-
-                ind++;
-                Console.WriteLine("cuente {0}", ind.ToString());
-
-                Console.Write("color {0} ", uglyMoves[i].Color);
-                Console.Write("from {0} ",  uglyMoves[i].From);
-                Console.Write("to {0} ",    uglyMoves[i].To);
-                Console.Write("flags {0} ", uglyMoves[i].Flags);
-                Console.WriteLine("piece {0}", uglyMoves[i].Piece);
-                Console.WriteLine("\n");
-
                 moves.Add(MoveToSan(uglyMoves[i], false));
             }
-
             return moves;
         }
 
-        public List<Move> Moves(Dictionary<string, bool> options)
+        public List<Move> Moves(Dictionary<string, string> options)
         {
             List<Move> uglyMoves = GenerateMoves(options);
             List<Move> moves = new List<Move>();
-
             for (int i = 0, len = uglyMoves.Count; i < len; i++)
             {
                 moves.Add(MakePretty(uglyMoves[i]));
@@ -289,7 +271,25 @@ namespace Chessharp.Core
                     moveHistory.Add(MakePretty(move));
                 }
             }
+            return moveHistory;
+        }
 
+        public List<string> GetHistory()
+        {
+            List<Move> reversedHistory = new List<Move>();
+            List<Move> moveHistory = new List<Move>();
+            bool verbose = (options != null && options.ContainsKey("verbose")) ? options["verbose"] : false;
+
+            while (HISTORY.Count > 0)
+                reversedHistory.Add(UndoMove());            
+
+            while (reversedHistory.Count > 0)
+            {
+                Move move = reversedHistory[reversedHistory.Count - 1];
+                if (verbose) {
+                    moveHistory.Add(MakePretty(move));
+                }
+            }
             return moveHistory;
         }
     }
